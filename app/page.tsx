@@ -3,7 +3,8 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 
-function FloatingPaths({ position }: { position: number }) {
+// Animated SVG background
+function FloatingPaths({ position = 1 }: { position?: number }) {
   const paths = Array.from({ length: 36 }, (_, i) => ({
     id: i,
     d: `M-${380 - i * 5 * position} -${189 + i * 6}C-${
@@ -18,31 +19,17 @@ function FloatingPaths({ position }: { position: number }) {
 
   return (
     <div className="absolute inset-0 pointer-events-none">
-      <svg
-        className="w-full h-full text-slate-950 dark:text-white"
-        viewBox="0 0 696 316"
-        fill="none"
-        aria-hidden="true"
-      >
-        <title>Background Paths</title>
+      <svg className="w-full h-full text-slate-900" viewBox="0 0 696 316" fill="none" aria-hidden="true">
         {paths.map((path) => (
           <motion.path
             key={path.id}
             d={path.d}
             stroke="currentColor"
             strokeWidth={path.width}
-            strokeOpacity={0.1 + path.id * 0.03}
+            strokeOpacity={0.08 + path.id * 0.02}
             initial={{ pathLength: 0.3, opacity: 0.6 }}
-            animate={{
-              pathLength: 1,
-              opacity: [0.3, 0.6, 0.3],
-              pathOffset: [0, 1, 0],
-            }}
-            transition={{
-              duration: 20 + Math.random() * 10,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "linear",
-            }}
+            animate={{ pathLength: 1, opacity: [0.3, 0.6, 0.3], pathOffset: [0, 1, 0] }}
+            transition={{ duration: 20 + Math.random() * 10, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
           />
         ))}
       </svg>
@@ -51,55 +38,53 @@ function FloatingPaths({ position }: { position: number }) {
 }
 
 export default function HomePage() {
-  const title = "Dwellika live soon" // exact copy as requested
-  const subtitle = "Good thing take time" // exact copy as requested
-  const cta = "Ready for live" // exact copy as requested
+  const title = "Dwellika live soon"
+  const subtitle = "Good thing take time"
+  const cta = "Ready for live"
 
   const words = title.split(" ")
 
   return (
-    <div className="relative min-h-[calc(100vh-theme(spacing.16))] w-full flex items-center justify-center overflow-hidden bg-white dark:bg-neutral-950">
-      {/* Animated background */}
+    <main className="relative min-h-[80vh] w-full overflow-hidden">
+      {/* Warm craft-inspired solid backdrop */}
+      <div className="absolute inset-0 bg-[rgb(246,240,232)]" />
+
+      {/* Animated vector paths */}
       <div className="absolute inset-0">
         <FloatingPaths position={1} />
         <FloatingPaths position={-1} />
       </div>
 
-      {/* Centered content */}
-      <div className="relative z-10 container mx-auto px-4 md:px-6 py-16 text-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2 }}
-          className="max-w-4xl mx-auto"
-        >
+      {/* Content */}
+      <section className="relative z-10 container mx-auto px-4 md:px-6 flex min-h-[80vh] items-center justify-center text-center">
+        <div className="w-full max-w-3xl">
           {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/80 px-3 py-1 text-sm text-neutral-700 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-black/60 dark:text-neutral-300"
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-sm text-slate-700 shadow-sm backdrop-blur"
           >
             <span className="inline-block size-2 rounded-full bg-amber-500" aria-hidden="true" />
             Coming soon
           </motion.div>
 
           {/* Title */}
-          <h1 className="mt-6 text-5xl sm:text-7xl md:text-8xl font-bold tracking-tighter leading-[0.95]">
+          <h1 className="mt-6 text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter mb-4">
             {words.map((word, wordIndex) => (
-              <span key={wordIndex} className="inline-block mr-4 last:mr-0">
+              <span key={wordIndex} className="inline-block mr-3 last:mr-0">
                 {word.split("").map((letter, letterIndex) => (
                   <motion.span
                     key={`${wordIndex}-${letterIndex}`}
-                    initial={{ y: 100, opacity: 0 }}
+                    initial={{ y: 80, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{
-                      delay: wordIndex * 0.12 + letterIndex * 0.035,
+                      delay: wordIndex * 0.12 + letterIndex * 0.03,
                       type: "spring",
-                      stiffness: 160,
-                      damping: 24,
+                      stiffness: 150,
+                      damping: 22,
                     }}
-                    className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 to-neutral-700/80 dark:from-white dark:to-white/80"
+                    className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-700"
                   >
                     {letter}
                   </motion.span>
@@ -109,39 +94,21 @@ export default function HomePage() {
           </h1>
 
           {/* Subtitle */}
-          <motion.p
-            className="mt-6 text-lg md:text-2xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-          >
-            {subtitle}
-          </motion.p>
+          <p className="text-lg md:text-xl text-slate-700/90 mb-8">{subtitle}</p>
 
           {/* CTA */}
-          <motion.div
-            className="mt-10 flex justify-center"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0, duration: 0.6 }}
-          >
-            <div className="inline-block group relative bg-gradient-to-b from-black/10 to-white/10 dark:from-white/10 dark:to-black/10 p-px rounded-2xl backdrop-blur-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <Button
-                className="rounded-[1.15rem] px-8 py-6 text-lg font-semibold backdrop-blur-md
-                           bg-white/95 hover:bg-white/100 dark:bg-black/95 dark:hover:bg-black/100
-                           text-black dark:text-white transition-all duration-300
-                           group-hover:-translate-y-0.5 border border-black/10 dark:border-white/10
-                           hover:shadow-md dark:hover:shadow-neutral-800/50"
-              >
-                {cta}
-                <span className="ml-3 opacity-70 group-hover:opacity-100 group-hover:translate-x-1.5 transition-all duration-300">
-                  →
-                </span>
-              </Button>
-            </div>
-          </motion.div>
-        </motion.div>
-      </div>
-    </div>
+          <div className="inline-block group relative p-px rounded-2xl bg-gradient-to-b from-black/10 to-white/20 shadow-lg">
+            <Button
+              className="rounded-[1.15rem] px-8 py-6 text-lg font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-all group-hover:-translate-y-0.5"
+              asChild
+            >
+              <a href="#notify" aria-label="Get notified when Dwellika goes live">
+                {cta} <span className="ml-2 opacity-80 group-hover:opacity-100 transition-opacity">→</span>
+              </a>
+            </Button>
+          </div>
+        </div>
+      </section>
+    </main>
   )
 }

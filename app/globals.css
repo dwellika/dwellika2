@@ -1,51 +1,74 @@
+/* Tailwind base layers */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Brand palette derived from provided images
+   - Background: warm craft cream
+   - Foreground/Text: slate-navy
+   - Secondary/Accent: soft tan + muted green
+*/
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262.1 83.3% 57.8%;
+    /* Light theme (default) */
+    --background: 36 52% 94%; /* warm cream */
+    --foreground: 215 28% 17%; /* slate-navy */
+    --card: 36 52% 98%;
+    --card-foreground: 215 28% 17%;
+
+    --popover: 36 52% 98%;
+    --popover-foreground: 215 28% 17%;
+
+    --primary: 215 31% 22%; /* deep slate-navy */
+    --primary-foreground: 36 52% 98%;
+
+    --secondary: 36 35% 74%; /* soft tan */
+    --secondary-foreground: 215 28% 17%;
+
+    --muted: 36 28% 88%;
+    --muted-foreground: 215 16% 40%;
+
+    --accent: 149 24% 36%; /* muted evergreen sprig */
+    --accent-foreground: 36 52% 98%;
+
+    --destructive: 8 78% 40%;
+    --destructive-foreground: 36 52% 98%;
+
+    --border: 36 20% 85%;
+    --input: 36 20% 85%;
+    --ring: 215 31% 22%;
+
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 262.1 83.3% 57.8%;
+    /* Dark theme */
+    --background: 215 30% 10%;
+    --foreground: 36 52% 96%;
+    --card: 215 30% 12%;
+    --card-foreground: 36 52% 96%;
+
+    --popover: 215 30% 12%;
+    --popover-foreground: 36 52% 96%;
+
+    --primary: 36 52% 94%;
+    --primary-foreground: 215 31% 22%;
+
+    --secondary: 36 20% 20%;
+    --secondary-foreground: 36 52% 96%;
+
+    --muted: 215 18% 18%;
+    --muted-foreground: 36 18% 72%;
+
+    --accent: 149 24% 44%;
+    --accent-foreground: 215 30% 10%;
+
+    --destructive: 8 64% 46%;
+    --destructive-foreground: 215 30% 10%;
+
+    --border: 215 20% 20%;
+    --input: 215 20% 20%;
+    --ring: 36 52% 94%;
   }
 }
 
@@ -58,21 +81,19 @@
   }
 }
 
-/* Custom utility classes */
+/* Utilities */
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
-
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
-
 .line-clamp-3 {
   overflow: hidden;
   display: -webkit-box;
