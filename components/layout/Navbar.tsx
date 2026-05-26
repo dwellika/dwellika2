@@ -1,11 +1,11 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
 import { Heart, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { SmartImage } from "@/components/ui/smart-image"
 
 import { CartIndicator } from "./CartIndicator"
 import { CommandMenu, CommandTrigger } from "./CommandMenu"
@@ -25,9 +25,11 @@ export function Navbar() {
 
         <Link href="/" className="flex items-center gap-2">
           <span className="relative size-8 overflow-hidden rounded-md">
-            <Image
-              src="/images/brand/logo.png"
-              alt=""
+            <SmartImage
+              src="/images/brand/logo.svg"
+              alt="Dwellika"
+              kind="generic"
+              seed="Dwellika"
               fill
               sizes="32px"
               className="object-cover"

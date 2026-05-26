@@ -1,7 +1,7 @@
-import Image from "next/image"
 import Link from "next/link"
 import { Github, Instagram, Twitter, Youtube } from "lucide-react"
 
+import { SmartImage } from "@/components/ui/smart-image"
 import { Separator } from "@/components/ui/separator"
 
 import { NewsletterForm } from "./NewsletterForm"
@@ -71,7 +71,15 @@ export function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-2">
               <span className="relative size-9 overflow-hidden rounded-md">
-                <Image src="/images/brand/logo.png" alt="" fill sizes="36px" className="object-cover" />
+                <SmartImage
+                  src="/images/brand/logo.svg"
+                  alt="Dwellika"
+                  kind="generic"
+                  seed="Dwellika"
+                  fill
+                  sizes="36px"
+                  className="object-cover"
+                />
               </span>
               <span className="font-display text-2xl">Dwellika</span>
             </Link>

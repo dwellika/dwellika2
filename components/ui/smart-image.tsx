@@ -138,6 +138,7 @@ export function SmartImage({
   seed,
   className,
   fallbackClassName,
+  fill,
   ...rest
 }: BaseProps) {
   const [broken, setBroken] = useState(false)
@@ -152,7 +153,7 @@ export function SmartImage({
       <ImageFallbackTile
         kind={kind}
         seed={seed ?? alt}
-        className={cn(className, fallbackClassName)}
+        className={cn(fill && "absolute inset-0", className, fallbackClassName)}
       />
     )
   }
@@ -160,6 +161,7 @@ export function SmartImage({
   return (
     <Image
       {...rest}
+      fill={fill}
       src={safeSrc}
       alt={alt}
       className={className}

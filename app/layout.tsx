@@ -48,14 +48,14 @@ export const metadata: Metadata = {
     title: "Dwellika — A living museum for artists and collectors",
     description:
       "Discover originals, watch artists at work, join craft communities, and collect from a curated global gallery.",
-    images: ["/placeholder-logo.png"],
+    images: ["/placeholder.svg"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Dwellika",
     description:
       "Discover originals, watch artists at work, join craft communities, and collect from a curated global gallery.",
-    images: ["/placeholder-logo.png"],
+    images: ["/placeholder.svg"],
   },
   manifest: "/manifest.json",
 }

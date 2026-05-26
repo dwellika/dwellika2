@@ -28,7 +28,7 @@ export default async function HomePage() {
     specialty: a.artist_profiles?.specialty ?? "Artist",
     location: a.location ?? "",
     avatar: a.avatar_url ?? "/placeholder.svg",
-    cover: a.cover_url ?? "/images/theme/crafts-and-gifts.png",
+    cover: a.cover_url ?? "/placeholder.svg",
     followers: 0,
     works: 0,
     verified: a.is_verified,

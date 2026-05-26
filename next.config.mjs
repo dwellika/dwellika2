@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  serverExternalPackages: ["@supabase/supabase-js", "@supabase/ssr"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co" },
