@@ -1,56 +1,70 @@
 "use client"
 
-import type React from "react"
+import Link from "next/link"
+import { useState, useTransition } from "react"
 
+import { signInWithPassword } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
 
-export function SignInForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    console.log("Sign in:", { email, password })
-    setIsLoading(false)
-  }
+export function SignInForm({ next = "/" }: { next?: string }) {
+  const [error, setError] = useState<string | null>(null)
+  const [pending, startTransition] = useTransition()
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
+    <form
+      action={(fd) =>
+        startTransition(async () => {
+          setError(null)
+          fd.set("next", next)
+          const result = await signInWithPassword(fd)
+          if (result && !result.ok) setError(result.error)
+        })
+      }
+      className="space-y-4"
+    >
+      <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
+          name="email"
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter your email"
+          autoComplete="email"
           required
+          placeholder="you@studio.art"
         />
       </div>
 
-      <div>
-        <Label htmlFor="password">Password</Label>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Password</Label>
+          <Link
+            href="/forgot-password"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Forgot?
+          </Link>
+        </div>
         <Input
           id="password"
+          name="password"
           type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter your password"
+          autoComplete="current-password"
           required
+          minLength={8}
+          placeholder="••••••••"
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Signing in..." : "Sign In"}
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <Button type="submit" className="w-full" disabled={pending}>
+        {pending ? "Signing in…" : "Sign in"}
       </Button>
     </form>
   )

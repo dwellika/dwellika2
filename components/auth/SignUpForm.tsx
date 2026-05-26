@@ -1,113 +1,121 @@
 "use client"
 
-import type React from "react"
+import { useState, useTransition } from "react"
 
+import { signUpWithPassword } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { useState } from "react"
 
 export function SignUpForm() {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    agreeToTerms: false,
-  })
-  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [agreed, setAgreed] = useState(false)
+  const [pending, startTransition] = useTransition()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    console.log("Sign up:", formData)
-    setIsLoading(false)
-  }
-
-  const handleChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  if (success) {
+    return (
+      <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm">
+        <p className="font-medium">Almost there.</p>
+        <p className="mt-1 text-muted-foreground">
+          We sent a confirmation link to your inbox. Open it to finish creating
+          your Dwellika account.
+        </p>
+      </div>
+    )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="firstName">First Name</Label>
-          <Input
-            id="firstName"
-            value={formData.firstName}
-            onChange={(e) => handleChange("firstName", e.target.value)}
-            placeholder="First name"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="lastName">Last Name</Label>
-          <Input
-            id="lastName"
-            value={formData.lastName}
-            onChange={(e) => handleChange("lastName", e.target.value)}
-            placeholder="Last name"
-            required
-          />
-        </div>
+    <form
+      action={(fd) =>
+        startTransition(async () => {
+          setError(null)
+          const result = await signUpWithPassword(fd)
+          if (result && result.ok) {
+            setSuccess(true)
+          } else if (result) {
+            setError(result.error)
+          }
+        })
+      }
+      className="space-y-4"
+    >
+      <div className="space-y-2">
+        <Label htmlFor="fullName">Full name</Label>
+        <Input
+          id="fullName"
+          name="fullName"
+          autoComplete="name"
+          required
+          placeholder="Mira Sen"
+        />
       </div>
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
+          name="email"
           type="email"
-          value={formData.email}
-          onChange={(e) => handleChange("email", e.target.value)}
-          placeholder="Enter your email"
+          autoComplete="email"
           required
+          placeholder="you@studio.art"
         />
       </div>
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
+          name="password"
           type="password"
-          value={formData.password}
-          onChange={(e) => handleChange("password", e.target.value)}
-          placeholder="Create a password"
+          autoComplete="new-password"
           required
+          minLength={8}
+          placeholder="At least 8 characters"
         />
       </div>
 
-      <div>
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirm password</Label>
         <Input
           id="confirmPassword"
+          name="confirmPassword"
           type="password"
-          value={formData.confirmPassword}
-          onChange={(e) => handleChange("confirmPassword", e.target.value)}
-          placeholder="Confirm your password"
+          autoComplete="new-password"
           required
+          minLength={8}
         />
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-start gap-2">
         <Checkbox
           id="terms"
-          checked={formData.agreeToTerms}
-          onCheckedChange={(checked) => handleChange("agreeToTerms", checked as boolean)}
+          checked={agreed}
+          onCheckedChange={(v) => setAgreed(v === true)}
         />
-        <Label htmlFor="terms" className="text-sm">
-          I agree to the Terms of Service and Privacy Policy
+        <Label htmlFor="terms" className="text-sm leading-snug text-muted-foreground">
+          I agree to the{" "}
+          <a className="text-foreground underline" href="/terms">
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a className="text-foreground underline" href="/privacy">
+            Privacy Policy
+          </a>
+          .
         </Label>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading || !formData.agreeToTerms}>
-        {isLoading ? "Creating account..." : "Create Account"}
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <Button type="submit" className="w-full" disabled={pending || !agreed}>
+        {pending ? "Creating account…" : "Create account"}
       </Button>
     </form>
   )

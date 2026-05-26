@@ -2,33 +2,74 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useState } from "react"
+import { Heart, Search } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 
+import { CartIndicator } from "./CartIndicator"
+import { CommandMenu, CommandTrigger } from "./CommandMenu"
+import { MainNav } from "./MainNav"
+import { MobileNav } from "./MobileNav"
+import { ModeToggle } from "./ModeToggle"
+import { NotificationBell } from "./NotificationBell"
+import { UserMenu } from "./UserMenu"
+
 export function Navbar() {
+  const [cmdOpen, setCmdOpen] = useState(false)
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md">
-      <div className="container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
-          <Image
-            src="/images/brand/logo.png"
-            alt="Dwellika logo"
-            width={36}
-            height={36}
-            priority
-            className="rounded-sm"
-          />
-          <span className="font-semibold tracking-tight text-lg">Dwellika</span>
+    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/70 backdrop-blur-xl">
+      <div className="container-page flex h-16 items-center gap-4">
+        <MobileNav />
+
+        <Link href="/" className="flex items-center gap-2">
+          <span className="relative size-8 overflow-hidden rounded-md">
+            <Image
+              src="/images/brand/logo.png"
+              alt=""
+              fill
+              sizes="32px"
+              className="object-cover"
+            />
+          </span>
+          <span className="font-display text-xl tracking-tight">Dwellika</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" asChild>
-            <Link href="/(pages)/artists">Artists</Link>
+
+        <div className="ml-2 hidden md:block">
+          <MainNav />
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          <CommandTrigger onOpen={() => setCmdOpen(true)} />
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setCmdOpen(true)}
+            aria-label="Search"
+          >
+            <Search className="size-5" />
           </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/(pages)/shopping/arts">Shop</Link>
+
+          <Button variant="ghost" size="icon" asChild aria-label="Wishlist">
+            <Link href="/wishlist"><Heart className="size-5" /></Link>
           </Button>
-          <Button className="bg-primary text-primary-foreground hover:opacity-90">Get Updates</Button>
+
+          <ModeToggle className="relative hidden sm:inline-flex" />
+
+          <NotificationBell />
+
+          <CartIndicator />
+
+          <div className="ml-1">
+            <UserMenu />
+          </div>
         </div>
       </div>
+
+      <CommandMenu open={cmdOpen} onOpenChange={setCmdOpen} />
     </header>
   )
 }

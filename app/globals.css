@@ -1,102 +1,290 @@
-/* Tailwind base layers */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
 
-/* Brand palette derived from provided images
-   - Background: warm craft cream
-   - Foreground/Text: slate-navy
-   - Secondary/Accent: soft tan + muted green
-*/
-@layer base {
-  :root {
-    /* Light theme (default) */
-    --background: 36 52% 94%; /* warm cream */
-    --foreground: 215 28% 17%; /* slate-navy */
-    --card: 36 52% 98%;
-    --card-foreground: 215 28% 17%;
+@custom-variant dark (&:where(.dark, .dark *));
 
-    --popover: 36 52% 98%;
-    --popover-foreground: 215 28% 17%;
+/* ------------------------------------------------------------------
+ * Dwellika design tokens — Studio Cream
+ * Warm museum / artisan-studio palette
+ * Light = cream paper + espresso ink + terracotta / sage / ochre
+ * Dark  = deep espresso + lit terracotta / sage / ochre
+ * ------------------------------------------------------------------ */
 
-    --primary: 215 31% 22%; /* deep slate-navy */
-    --primary-foreground: 36 52% 98%;
+:root {
+  /* Surface — paper cream */
+  --background: 42 66% 94%;        /* #FAF4E6 */
+  --foreground: 26 26% 11%;        /* #221A14 espresso ink */
+  --card: 44 100% 97%;             /* #FFFBF0 */
+  --card-foreground: 26 26% 11%;
+  --popover: 44 100% 97%;
+  --popover-foreground: 26 26% 11%;
 
-    --secondary: 36 35% 74%; /* soft tan */
-    --secondary-foreground: 215 28% 17%;
+  /* Brand accents */
+  --primary: 13 55% 51%;           /* #C75D3F terracotta */
+  --primary-foreground: 44 100% 97%;
+  --secondary: 39 67% 55%;         /* #D9A441 ochre */
+  --secondary-foreground: 26 26% 11%;
+  --accent: 159 26% 33%;           /* #3F6B5C sage */
+  --accent-foreground: 44 100% 97%;
+  --tertiary: 200 35% 40%;         /* dusty teal (for charts) */
+  --tertiary-foreground: 44 100% 97%;
 
-    --muted: 36 28% 88%;
-    --muted-foreground: 215 16% 40%;
+  --muted: 41 47% 88%;             /* #EFE6D2 warm muted paper */
+  --muted-foreground: 35 18% 35%;  /* #6B5D4A warm graphite */
 
-    --accent: 149 24% 36%; /* muted evergreen sprig */
-    --accent-foreground: 36 52% 98%;
+  --destructive: 6 60% 45%;        /* #B83B2E barn red */
+  --destructive-foreground: 44 100% 97%;
 
-    --destructive: 8 78% 40%;
-    --destructive-foreground: 36 52% 98%;
+  --border: 40 37% 79%;            /* #DDD0B5 deckled edge */
+  --input: 40 37% 79%;
+  --ring: 13 55% 51%;
 
-    --border: 36 20% 85%;
-    --input: 36 20% 85%;
-    --ring: 215 31% 22%;
+  --radius: 0.75rem;
 
-    --radius: 0.5rem;
-  }
+  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui;
+  --font-body: var(--font-inter), var(--font-manrope), ui-sans-serif, system-ui;
+}
 
-  .dark {
-    /* Dark theme */
-    --background: 215 30% 10%;
-    --foreground: 36 52% 96%;
-    --card: 215 30% 12%;
-    --card-foreground: 36 52% 96%;
+.dark {
+  /* Surface — deep espresso */
+  --background: 29 18% 9%;         /* #1A1612 */
+  --foreground: 42 66% 94%;        /* cream */
+  --card: 28 20% 11%;              /* #211B16 */
+  --card-foreground: 42 66% 94%;
+  --popover: 28 20% 11%;
+  --popover-foreground: 42 66% 94%;
 
-    --popover: 215 30% 12%;
-    --popover-foreground: 36 52% 96%;
+  --primary: 14 68% 62%;           /* #E07A5A warm terracotta */
+  --primary-foreground: 26 26% 11%;
+  --secondary: 41 74% 67%;         /* #E9C36F lit ochre */
+  --secondary-foreground: 26 26% 11%;
+  --accent: 153 22% 52%;           /* #6BA088 lit sage */
+  --accent-foreground: 26 26% 11%;
+  --tertiary: 200 40% 60%;
+  --tertiary-foreground: 26 26% 11%;
 
-    --primary: 36 52% 94%;
-    --primary-foreground: 215 31% 22%;
+  --muted: 31 25% 13%;             /* #2A2219 */
+  --muted-foreground: 38 25% 70%;
 
-    --secondary: 36 20% 20%;
-    --secondary-foreground: 36 52% 96%;
+  --destructive: 6 65% 55%;
+  --destructive-foreground: 44 100% 97%;
 
-    --muted: 215 18% 18%;
-    --muted-foreground: 36 18% 72%;
+  --border: 30 22% 20%;            /* #3E3328 */
+  --input: 30 22% 20%;
+  --ring: 14 68% 62%;
+}
 
-    --accent: 149 24% 44%;
-    --accent-foreground: 215 30% 10%;
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-tertiary: hsl(var(--tertiary));
+  --color-tertiary-foreground: hsl(var(--tertiary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
 
-    --destructive: 8 64% 46%;
-    --destructive-foreground: 215 30% 10%;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
-    --border: 215 20% 20%;
-    --input: 215 20% 20%;
-    --ring: 36 52% 94%;
-  }
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+
+  --shadow-glow: 0 0 40px -10px hsl(var(--primary) / 0.45);
+  --shadow-glow-accent: 0 0 40px -10px hsl(var(--accent) / 0.5);
+
+  --ease-art: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-aurora: aurora 18s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow-pulse: glow-pulse 3s ease-in-out infinite;
+  --animate-marquee: marquee 30s linear infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+@keyframes aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+  50% { transform: translate3d(2%, -3%, 0) scale(1.08); opacity: 0.85; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.55; filter: blur(20px); }
+  50% { opacity: 0.95; filter: blur(28px); }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
+
+  html {
+    color-scheme: light dark;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.35);
+    color: hsl(var(--foreground));
   }
 }
 
-/* Utilities */
-.line-clamp-1 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+@layer components {
+  .container-page {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    max-width: 80rem;
+  }
+
+  @media (min-width: 768px) {
+    .container-page { padding-inline: 2rem; }
+  }
+
+  .glass {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--card) / 0.72),
+      hsl(var(--card) / 0.45)
+    );
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .gradient-text {
+    background: linear-gradient(
+      120deg,
+      hsl(var(--primary)),
+      hsl(var(--secondary)),
+      hsl(var(--accent))
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .aurora-bg {
+    position: absolute;
+    inset: -20%;
+    z-index: -1;
+    background:
+      radial-gradient(circle at 20% 30%, hsl(var(--primary) / 0.35), transparent 45%),
+      radial-gradient(circle at 80% 20%, hsl(var(--secondary) / 0.32), transparent 45%),
+      radial-gradient(circle at 50% 80%, hsl(var(--accent) / 0.30), transparent 55%);
+    filter: blur(60px);
+    animation: var(--animate-aurora);
+  }
+
+  /* Subtle paper texture — usable on hero / showcase blocks */
+  .paper-grain {
+    position: relative;
+  }
+  .paper-grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(hsl(var(--foreground) / 0.05) 1px, transparent 1px),
+      radial-gradient(hsl(var(--foreground) / 0.04) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+    mix-blend-mode: multiply;
+    opacity: 0.6;
+  }
+  .dark .paper-grain::after {
+    mix-blend-mode: screen;
+    opacity: 0.35;
+  }
+
+  /* Unified image overlay — sits over photos so dark gradient stays in both modes */
+  .image-overlay {
+    background: linear-gradient(to top, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.15) 55%, transparent);
+  }
+  .image-overlay-strong {
+    background: linear-gradient(to top, rgb(0 0 0 / 0.75), rgb(0 0 0 / 0.25) 60%, transparent);
+  }
+
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }
-.line-clamp-2 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.line-clamp-3 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

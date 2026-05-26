@@ -1,78 +1,54 @@
-import { PaymentForm } from "@/components/checkout/PaymentForm"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { redirect } from "next/navigation"
 
-export default function CheckoutPage() {
-  const orderItems = [
-    {
-      id: 1,
-      title: "Sunset Dreams",
-      artist: "Sarah Johnson",
-      price: 450,
-      quantity: 1,
-    },
-    {
-      id: 2,
-      title: "Professional Brush Set",
-      artist: "BrushPro",
-      price: 89,
-      quantity: 2,
-    },
-  ]
+import { createClient } from "@/lib/supabase/server"
+import { isStripeConfigured } from "@/lib/stripe/server"
+import { isRazorpayConfigured } from "@/lib/razorpay/server"
 
-  const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = 15
-  const total = subtotal + shipping
+import { CheckoutShell } from "./CheckoutShell"
+
+export const metadata = { title: "Checkout" }
+
+export default async function CheckoutPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect("/signin?next=/checkout")
+
+  const { data: addresses } = await supabase
+    .from("addresses")
+    .select("id, full_name, line1, line2, city, state, postal_code, country, phone, is_default")
+    .eq("user_id", user.id)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: false })
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle()
+
+  const stripeReady = isStripeConfigured()
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? null
+  const razorpayReady = isRazorpayConfigured()
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">Checkout</h1>
-
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Payment Form */}
-        <div>
-          <PaymentForm />
-        </div>
-
-        {/* Order Summary */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 mb-6">
-                {orderItems.map((item) => (
-                  <div key={item.id} className="flex justify-between">
-                    <div>
-                      <p className="font-medium">{item.title}</p>
-                      <p className="text-sm text-muted-foreground">by {item.artist}</p>
-                      <p className="text-sm">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="font-medium">${item.price * item.quantity}</p>
-                  </div>
-                ))}
-              </div>
-
-              <hr className="mb-4" />
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>${subtotal}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span>${shipping}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-lg pt-2 border-t">
-                  <span>Total</span>
-                  <span>${total}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+    <CheckoutShell
+      defaultName={(profile as { full_name?: string } | null)?.full_name ?? ""}
+      savedAddresses={(addresses ?? []) as Array<{
+        id: string
+        full_name: string
+        line1: string
+        line2: string | null
+        city: string
+        state: string
+        postal_code: string
+        country: string
+        phone: string | null
+        is_default: boolean
+      }>}
+      stripeReady={stripeReady && Boolean(publishableKey)}
+      razorpayReady={razorpayReady}
+    />
   )
 }

@@ -1,18 +1,37 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
+import { useTransition } from "react"
 
-export function SignOutButton() {
-  const handleSignOut = () => {
-    // Handle sign out logic
-    console.log("Signing out...")
-  }
+import { signOut } from "@/app/(auth)/actions"
+import { Button } from "@/components/ui/button"
+
+export function SignOutButton({
+  className,
+  variant = "ghost",
+  children = "Sign out",
+}: {
+  className?: string
+  variant?: "default" | "ghost" | "outline" | "destructive" | "secondary" | "link"
+  children?: React.ReactNode
+}) {
+  const [pending, startTransition] = useTransition()
 
   return (
-    <Button variant="ghost" onClick={handleSignOut}>
-      <LogOut className="w-4 h-4 mr-2" />
-      Sign Out
-    </Button>
+    <form
+      action={() =>
+        startTransition(async () => {
+          await signOut()
+        })
+      }
+    >
+      <Button
+        type="submit"
+        variant={variant}
+        className={className}
+        disabled={pending}
+      >
+        {pending ? "Signing out…" : children}
+      </Button>
+    </form>
   )
 }

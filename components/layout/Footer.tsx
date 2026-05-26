@@ -1,109 +1,145 @@
-import Link from "next/link"
 import Image from "next/image"
-import { Facebook, Instagram, Twitter, Mail } from "lucide-react"
+import Link from "next/link"
+import { Github, Instagram, Twitter, Youtube } from "lucide-react"
+
+import { Separator } from "@/components/ui/separator"
+
+import { NewsletterForm } from "./NewsletterForm"
+
+const COLUMNS = [
+  {
+    title: "Discover",
+    items: [
+      { label: "AI search", href: "/discover" },
+      { label: "Original Artworks", href: "/shopping/arts" },
+      { label: "Art Supplies", href: "/shopping/art-supplies" },
+      { label: "Home Decor", href: "/shopping/decor-items" },
+      { label: "Wearing Arts", href: "/shopping/wearing-arts" },
+      { label: "Artists", href: "/artists" },
+      { label: "Collections", href: "/collections" },
+      { label: "Communities", href: "/communities" },
+      { label: "Competitions", href: "/competitions" },
+      { label: "Reels", href: "/reels" },
+      { label: "Courses", href: "/courses" },
+      { label: "Workshops", href: "/workshops" },
+    ],
+  },
+  {
+    title: "Create",
+    items: [
+      { label: "Upload Artwork", href: "/artist/dashboard" },
+      { label: "Sell on Dwellika", href: "/sellers/join" },
+      { label: "Host a Workshop", href: "/workshops/host" },
+      { label: "Reels Studio", href: "/reels/studio" },
+      { label: "Creator Fund", href: "/creator-fund" },
+    ],
+  },
+  {
+    title: "Company",
+    items: [
+      { label: "About", href: "/about" },
+      { label: "Careers", href: "/careers" },
+      { label: "Press", href: "/press" },
+      { label: "Blog", href: "/blog" },
+      { label: "Contact", href: "/contact" },
+    ],
+  },
+  {
+    title: "Help",
+    items: [
+      { label: "Help Center", href: "/help" },
+      { label: "Shipping & Returns", href: "/help/shipping" },
+      { label: "Buyer Protection", href: "/help/buyer-protection" },
+      { label: "Seller Verification", href: "/sellers/verification" },
+      { label: "Trust & Safety", href: "/trust" },
+    ],
+  },
+]
+
+const LEGAL = [
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Cookies", href: "/cookies" },
+  { label: "Accessibility", href: "/accessibility" },
+]
 
 export function Footer() {
-  const year = new Date().getFullYear()
   return (
-    <footer className="bg-slate-950 text-slate-300 border-t border-slate-900">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-10 md:grid-cols-4">
-          {/* Brand */}
+    <footer className="border-t border-border/60 bg-card/40">
+      <div className="container-page py-16">
+        <div className="grid gap-12 lg:grid-cols-[1.2fr_2fr]">
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <Image
-                src="/images/brand/logo.png"
-                alt="Dwellika logo"
-                width={36}
-                height={36}
-                className="rounded-sm"
-                priority
-              />
-              <h3 className="text-2xl font-bold text-white">Dwellika</h3>
-            </div>
-            <p className="text-slate-400">
-              The art of dwelling well. Discover unique pieces from creators and artisans around the world.
+            <Link href="/" className="flex items-center gap-2">
+              <span className="relative size-9 overflow-hidden rounded-md">
+                <Image src="/images/brand/logo.png" alt="" fill sizes="36px" className="object-cover" />
+              </span>
+              <span className="font-display text-2xl">Dwellika</span>
+            </Link>
+            <p className="mt-4 max-w-sm text-sm text-muted-foreground">
+              A museum-grade marketplace and social platform for artists,
+              collectors, and the people who keep the studios running.
             </p>
-            <div className="flex items-center gap-4 mt-5 text-slate-400">
-              <a href="#" aria-label="Facebook" className="hover:text-white transition-colors">
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="#" aria-label="Instagram" className="hover:text-white transition-colors">
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a href="#" aria-label="Twitter" className="hover:text-white transition-colors">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="mailto:hello@dwellika.com" aria-label="Email" className="hover:text-white transition-colors">
-                <Mail className="h-5 w-5" />
-              </a>
+
+            <div className="mt-6">
+              <p className="mb-2 text-sm font-medium">Get the dispatch</p>
+              <NewsletterForm />
+            </div>
+
+            <div className="mt-8 flex items-center gap-3">
+              {[
+                { Icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+                { Icon: Twitter, href: "https://twitter.com", label: "Twitter" },
+                { Icon: Youtube, href: "https://youtube.com", label: "YouTube" },
+                { Icon: Github, href: "https://github.com", label: "GitHub" },
+              ].map(({ Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="grid size-9 place-items-center rounded-full border border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                  aria-label={label}
+                >
+                  <Icon className="size-4" />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Shop */}
-          <div>
-            <h4 className="font-semibold text-white mb-4 tracking-tight">Shop</h4>
-            <nav className="space-y-2">
-              <Link href="/shopping/arts" className="block text-slate-400 hover:text-white transition-colors">
-                Original Arts
-              </Link>
-              <Link href="/shopping/art-supplies" className="block text-slate-400 hover:text-white transition-colors">
-                Art Supplies
-              </Link>
-              <Link href="/shopping/decor-items" className="block text-slate-400 hover:text-white transition-colors">
-                Decor Items
-              </Link>
-            </nav>
-          </div>
-
-          {/* Community */}
-          <div>
-            <h4 className="font-semibold text-white mb-4 tracking-tight">Community</h4>
-            <nav className="space-y-2">
-              <Link href="/artists" className="block text-slate-400 hover:text-white transition-colors">
-                Artists
-              </Link>
-              <Link href="/reels" className="block text-slate-400 hover:text-white transition-colors">
-                Art Reels
-              </Link>
-              <Link href="#" className="block text-slate-400 hover:text-white transition-colors">
-                Blog
-              </Link>
-            </nav>
-          </div>
-
-          {/* Support */}
-          <div>
-            <h4 className="font-semibold text-white mb-4 tracking-tight">Support</h4>
-            <nav className="space-y-2">
-              <Link href="#" className="block text-slate-400 hover:text-white transition-colors">
-                Help Center
-              </Link>
-              <Link href="#" className="block text-slate-400 hover:text-white transition-colors">
-                Shipping Info
-              </Link>
-              <Link href="#" className="block text-slate-400 hover:text-white transition-colors">
-                Returns
-              </Link>
-              <Link href="#" className="block text-slate-400 hover:text-white transition-colors">
-                Contact Us
-              </Link>
-            </nav>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {COLUMNS.map((col) => (
+              <div key={col.title}>
+                <p className="mb-3 text-sm font-medium">{col.title}</p>
+                <ul className="space-y-2">
+                  {col.items.map((it) => (
+                    <li key={it.href}>
+                      <Link
+                        href={it.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {it.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
 
-        <hr className="my-10 border-slate-800" />
+        <Separator className="my-10" />
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-slate-400">{`© ${year} Dwellika. All rights reserved.`}</p>
-          <div className="flex gap-6">
-            <Link href="#" className="text-slate-400 hover:text-white transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="#" className="text-slate-400 hover:text-white transition-colors">
-              Terms of Service
-            </Link>
-          </div>
+        <div className="flex flex-col items-start justify-between gap-3 text-xs text-muted-foreground md:flex-row md:items-center">
+          <p>© {new Date().getFullYear()} Dwellika. Crafted with care.</p>
+          <ul className="flex flex-wrap items-center gap-4">
+            {LEGAL.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="transition-colors hover:text-foreground">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>
