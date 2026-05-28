@@ -34,14 +34,45 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { username, slug } = await params
-  const data = await getArtworkBySlug(username, slug)
+  const data = await getArtworkBySlug(username, slug).catch(() => null)
   if (!data) return { title: "Artwork" }
+
+  const artistName = data.artist.full_name ?? `@${data.artist.username}`
+  const pageUrl = `/artworks/${data.artist.username}/${data.slug}`
+  const imageUrls = data.artwork_media?.filter((m) => m.kind === "image").map((m) => m.url) ?? []
+  const description =
+    data.description ?? `${data.title} — original artwork by ${artistName} on Dwellika.`
+
   return {
-    title: `${data.title} · ${data.artist.full_name ?? `@${data.artist.username}`}`,
-    description: data.description ?? undefined,
+    title: `${data.title} · ${artistName}`,
+    description,
+    keywords: [
+      data.title,
+      artistName,
+      data.medium,
+      data.style,
+      data.subject,
+      "artwork",
+      "original art",
+      "buy art online",
+      "Dwellika",
+      ...(data.tags ?? []),
+    ].filter(Boolean) as string[],
+    alternates: { canonical: pageUrl },
     openGraph: {
-      images:
-        data.artwork_media?.filter((m) => m.kind === "image").map((m) => m.url) ?? [],
+      type: "website" as const,
+      url: pageUrl,
+      title: `${data.title} by ${artistName}`,
+      description,
+      images: imageUrls.length > 0
+        ? imageUrls.map((url) => ({ url, alt: data.title }))
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title: `${data.title} by ${artistName}`,
+      description,
+      images: imageUrls.slice(0, 1),
     },
   }
 }

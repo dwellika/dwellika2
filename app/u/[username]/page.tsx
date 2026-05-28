@@ -44,9 +44,46 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { username } = await params
+  const profile = await getProfileByUsername(username).catch(() => null)
+  if (!profile) return { title: `@${username}` }
+
+  const displayName = profile.full_name ?? `@${profile.username}`
+  const description =
+    profile.bio ??
+    `${displayName}'s portfolio on Dwellika — original artworks, products, and creative reels.`
+
   return {
-    title: `@${username}`,
-    description: `${username}'s portfolio on Dwellika.`,
+    title: profile.full_name
+      ? `${profile.full_name} (@${profile.username})`
+      : `@${profile.username}`,
+    description,
+    keywords: [
+      displayName,
+      profile.username ?? "",
+      "artist portfolio",
+      "buy art",
+      "original artwork",
+      "Dwellika",
+      ...(profile.interests ?? []),
+    ].filter(Boolean),
+    alternates: { canonical: `/u/${profile.username}` },
+    openGraph: {
+      type: "profile" as const,
+      username: profile.username ?? undefined,
+      firstName: profile.full_name?.split(" ")[0],
+      lastName: profile.full_name?.split(" ").slice(1).join(" ") || undefined,
+      title: `${displayName} on Dwellika`,
+      description,
+      images: profile.avatar_url
+        ? [{ url: profile.avatar_url, alt: displayName }]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title: `${displayName} on Dwellika`,
+      description,
+      images: profile.avatar_url ? [profile.avatar_url] : undefined,
+    },
   }
 }
 

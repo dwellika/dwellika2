@@ -27,11 +27,37 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { username, slug } = await params
-  const data = await getProductBySlug(username, slug)
+  const data = await getProductBySlug(username, slug).catch(() => null)
   if (!data) return { title: "Product" }
+
+  const sellerName = data.seller.full_name ?? `@${data.seller.username}`
+  const pageUrl = `/products/${data.seller.username}/${data.slug}`
+  const imageUrls = data.product_media
+    .sort((a, b) => a.position - b.position)
+    .filter((m) => m.kind === "image")
+    .map((m) => m.url)
+  const description = data.description ?? `${data.title} by ${sellerName} — shop on Dwellika.`
+
   return {
-    title: `${data.title} · ${data.seller.full_name ?? `@${data.seller.username}`}`,
-    description: data.description ?? undefined,
+    title: `${data.title} · ${sellerName}`,
+    description,
+    keywords: [data.title, sellerName, "buy", "shop", "Dwellika"].filter(Boolean) as string[],
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      type: "website" as const,
+      url: pageUrl,
+      title: `${data.title} by ${sellerName}`,
+      description,
+      images: imageUrls.length > 0
+        ? imageUrls.map((url) => ({ url, alt: data.title }))
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title: `${data.title} by ${sellerName}`,
+      description,
+      images: imageUrls.slice(0, 1),
+    },
   }
 }
 

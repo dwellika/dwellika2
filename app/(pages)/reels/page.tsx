@@ -5,8 +5,13 @@ import type { ReelWithCreator } from "@/lib/data/reels"
 import { ReelsFeed } from "./ReelsFeed"
 
 export const metadata = {
-  title: "Reels · Dwellika",
+  title: "Reels",
   description: "Watch artists create. Discover art. Buy direct.",
+  openGraph: {
+    type: "website",
+    title: "Reels — Dwellika",
+    description: "Watch artists create. Discover art. Buy direct.",
+  },
 }
 
 export const dynamic = "force-dynamic"

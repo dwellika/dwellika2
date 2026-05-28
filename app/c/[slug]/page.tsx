@@ -21,10 +21,30 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params
-  const c = await getCommunityBySlug(slug)
+  const c = await getCommunityBySlug(slug).catch(() => null)
+  if (!c) return { title: "Community" }
+
+  const description =
+    c.description ?? `Join the ${c.name} community on Dwellika — connect with artists and collectors.`
+
   return {
-    title: c?.name ?? "Community",
-    description: c?.description ?? undefined,
+    title: c.name,
+    description,
+    keywords: [c.name, "art community", "artists", "collectors", "Dwellika"],
+    alternates: { canonical: `/c/${c.slug}` },
+    openGraph: {
+      type: "website" as const,
+      url: `/c/${c.slug}`,
+      title: `${c.name} — Dwellika Community`,
+      description,
+      images: c.cover_url ? [{ url: c.cover_url, alt: c.name }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title: `${c.name} — Dwellika Community`,
+      description,
+      images: c.cover_url ? [c.cover_url] : undefined,
+    },
   }
 }
 

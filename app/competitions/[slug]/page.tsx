@@ -24,10 +24,29 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params
-  const c = await getCompetitionBySlug(slug)
+  const c = await getCompetitionBySlug(slug).catch(() => null)
+  if (!c) return { title: "Competition" }
+
+  const description = c.description ?? `Join ${c.title} — an art competition on Dwellika.`
+
   return {
-    title: c?.title ?? "Competition",
-    description: c?.description ?? undefined,
+    title: c.title,
+    description,
+    keywords: [c.title, "art competition", "win prizes", "submit artwork", "Dwellika"],
+    alternates: { canonical: `/competitions/${c.slug}` },
+    openGraph: {
+      type: "website" as const,
+      url: `/competitions/${c.slug}`,
+      title: c.title,
+      description,
+      images: c.banner_url ? [{ url: c.banner_url, alt: c.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title: c.title,
+      description,
+      images: c.banner_url ? [c.banner_url] : undefined,
+    },
   }
 }
 

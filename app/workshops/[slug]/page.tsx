@@ -18,8 +18,31 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params
-  const w = await getWorkshopBySlug(slug)
-  return { title: w?.title ?? "Workshop", description: w?.description ?? undefined }
+  const w = await getWorkshopBySlug(slug).catch(() => null)
+  if (!w) return { title: "Workshop" }
+
+  const hostName = w.host.full_name ?? `@${w.host.username}`
+  const description = w.description ?? `Live workshop by ${hostName} on Dwellika.`
+
+  return {
+    title: w.title,
+    description,
+    keywords: [w.title, hostName, "art workshop", "live class", "learn art", "Dwellika"],
+    alternates: { canonical: `/workshops/${w.slug}` },
+    openGraph: {
+      type: "website" as const,
+      url: `/workshops/${w.slug}`,
+      title: w.title,
+      description,
+      images: w.cover_url ? [{ url: w.cover_url, alt: w.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title: w.title,
+      description,
+      images: w.cover_url ? [w.cover_url] : undefined,
+    },
+  }
 }
 
 const fmt = (iso: string) =>

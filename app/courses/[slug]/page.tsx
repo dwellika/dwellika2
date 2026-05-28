@@ -25,8 +25,32 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params
-  const c = await getCourseBySlug(slug)
-  return { title: c?.title ?? "Course", description: c?.description ?? undefined }
+  const c = await getCourseBySlug(slug).catch(() => null)
+  if (!c) return { title: "Course" }
+
+  const instructorName = c.instructor.full_name ?? `@${c.instructor.username}`
+  const description =
+    c.description ?? `Online art course by ${instructorName} on Dwellika.`
+
+  return {
+    title: c.title,
+    description,
+    keywords: [c.title, instructorName, "online art course", "learn art", "Dwellika"],
+    alternates: { canonical: `/courses/${c.slug}` },
+    openGraph: {
+      type: "website" as const,
+      url: `/courses/${c.slug}`,
+      title: c.title,
+      description,
+      images: c.cover_url ? [{ url: c.cover_url, alt: c.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title: c.title,
+      description,
+      images: c.cover_url ? [c.cover_url] : undefined,
+    },
+  }
 }
 
 export default async function CoursePage({ params }: PageProps) {

@@ -174,3 +174,53 @@ export function courseJsonLd(input: {
     instructor: { "@type": "Person", name: input.instructorName },
   }
 }
+
+export function videoObjectJsonLd(input: {
+  name: string
+  description: string | null
+  url: string
+  thumbnailUrl: string | null
+  uploadDate: string
+  duration?: string | null
+  creatorName: string
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: input.name,
+    description: input.description ?? undefined,
+    url: `${SITE_URL}${input.url}`,
+    thumbnailUrl: input.thumbnailUrl ?? undefined,
+    uploadDate: input.uploadDate,
+    duration: input.duration ?? undefined,
+    author: { "@type": "Person", name: input.creatorName },
+    publisher: { "@type": "Organization", name: "Dwellika", url: SITE_URL },
+  }
+}
+
+export function organizationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Dwellika",
+    url: SITE_URL,
+    logo: `${SITE_URL}/opengraph-image`,
+    sameAs: [],
+    description:
+      "A living museum for artists and collectors — discover originals, watch artists at work, join craft communities.",
+  }
+}
+
+export function websiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Dwellika",
+    url: SITE_URL,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/discover?q={search_term_string}` },
+      "query-input": "required name=search_term_string",
+    },
+  }
+}

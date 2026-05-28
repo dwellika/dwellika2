@@ -8,6 +8,7 @@ import { FooterConditional } from "@/components/layout/FooterConditional"
 import { Navbar } from "@/components/layout/Navbar"
 import { InstallPrompt } from "@/components/pwa/InstallPrompt"
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister"
+import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/components/seo/JsonLd"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -49,14 +50,12 @@ export const metadata: Metadata = {
     title: "Dwellika — A living museum for artists and collectors",
     description:
       "Discover originals, watch artists at work, join craft communities, and collect from a curated global gallery.",
-    images: ["/placeholder.svg"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Dwellika",
     description:
       "Discover originals, watch artists at work, join craft communities, and collect from a curated global gallery.",
-    images: ["/placeholder.svg"],
   },
   manifest: "/manifest.json",
 }
@@ -76,6 +75,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <body className="font-sans antialiased">
+        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={websiteJsonLd()} />
         <Providers>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
 
