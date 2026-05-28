@@ -22,3 +22,5 @@ export async function listReels({
     skip: offset,
   })
 }
+
+export type ReelWithCreator = Awaited<ReturnType<typeof listReels>>[number]
