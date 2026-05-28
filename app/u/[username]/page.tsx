@@ -132,7 +132,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
           description: profile.bio,
         })}
       />
-      <div className="relative h-56 w-full overflow-hidden md:h-72 lg:h-80">
+      <div className="relative h-40 w-full overflow-hidden sm:h-56 md:h-72 lg:h-80">
         <SmartImage
           src={profile.cover_url}
           alt={`${profile.full_name ?? profile.username ?? "Artist"} cover`}
@@ -156,7 +156,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
 
             <div className="text-center md:text-left">
               <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                <h1 className="font-display text-3xl md:text-4xl">
+                <h1 className="font-display text-2xl sm:text-3xl md:text-4xl">
                   {profile.full_name ?? `@${profile.username}`}
                 </h1>
                 {profile.is_verified ? (
@@ -197,8 +197,8 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
           </div>
         </div>
 
-        <Card className="mt-8 glass">
-          <CardContent className="p-6">
+        <Card className="mt-6 glass md:mt-8">
+          <CardContent className="p-4 sm:p-6">
             {profile.bio ? <p className="text-foreground/90">{profile.bio}</p> : null}
 
             {profile.interests?.length ? (
@@ -220,7 +220,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
               </div>
             ) : null}
 
-            <div className="mt-6 flex flex-wrap items-center gap-6 text-sm">
+            <div className="mt-6 flex flex-wrap items-center gap-4 text-sm sm:gap-6">
               <Stat label="Followers" value={followers} />
               <Stat label="Following" value={following} />
               <Stat label="Works" value={artworks.length} />
@@ -262,8 +262,9 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue={tab} className="mt-10">
-          <TabsList className="overflow-x-auto">
+        <Tabs defaultValue={tab} className="mt-8 md:mt-10">
+          <div className="overflow-x-auto scrollbar-none -mx-0.5 px-0.5">
+          <TabsList className="w-max min-w-full">
             <TabsTrigger value="portfolio">Portfolio · {artworks.length}</TabsTrigger>
             <TabsTrigger value="reels">Reels · {reels.length}</TabsTrigger>
             <TabsTrigger value="store">Store · {products.length}</TabsTrigger>
@@ -273,6 +274,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             <TabsTrigger value="competitions">Competitions</TabsTrigger>
             <TabsTrigger value="followers">Followers · {followers}</TabsTrigger>
           </TabsList>
+          </div>
 
           <TabsContent value="portfolio">
             {artworks.length === 0 ? (
@@ -328,7 +330,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="font-display text-2xl">{value.toLocaleString()}</p>
+      <p className="font-display text-xl sm:text-2xl">{value.toLocaleString()}</p>
       <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
     </div>
   )
@@ -336,7 +338,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 function Empty({ label, hint }: { label: string; hint?: string }) {
   return (
-    <div className="mt-6 rounded-2xl border border-dashed border-border bg-muted/20 p-12 text-center">
+    <div className="mt-6 rounded-2xl border border-dashed border-border bg-muted/20 p-8 text-center sm:p-12">
       <p className="font-display text-xl">No {label} yet</p>
       <p className="mt-1 text-sm text-muted-foreground">
         {hint ?? `This space lights up as soon as ${label} are published.`}
@@ -362,7 +364,7 @@ function PortfolioMasonry({
   isAuthed: boolean
 }) {
   return (
-    <div className="mt-6 columns-2 gap-4 [column-fill:_balance] sm:columns-3 lg:columns-4">
+    <div className="mt-6 columns-1 gap-3 [column-fill:_balance] sm:columns-2 md:columns-3 lg:columns-4">
       {artworks.map((a: any) => {
         const artistRef = a.artist ?? null
         return (
@@ -394,7 +396,7 @@ function StoreGrid({
   sellerUsername: string | null
 }) {
   return (
-    <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
       {products.map((p: any) => (
         <ProductCard
           key={p.id}
