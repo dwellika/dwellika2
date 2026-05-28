@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 
-import { embedText, isOpenAIConfigured } from "@/lib/ai/openai"
+import { embedText, isEmbeddingConfigured } from "@/lib/ai/provider"
 import { prisma } from "@/lib/prisma"
 
 export const runtime = "nodejs"
@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
     if (!q || !q.trim()) {
       return NextResponse.json({ ok: false, error: "Missing query." }, { status: 400 })
     }
-    if (!isOpenAIConfigured()) {
+    if (!isEmbeddingConfigured()) {
       return NextResponse.json(
-        { ok: false, error: "AI search is not configured. Add OPENAI_API_KEY to .env.local to enable." },
+        { ok: false, configured: false, error: "AI search requires an OpenAI API key. Add OPENAI_API_KEY to .env.local." },
         { status: 503 },
       )
     }

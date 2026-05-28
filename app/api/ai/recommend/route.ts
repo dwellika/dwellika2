@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { embedText, isOpenAIConfigured } from "@/lib/ai/openai"
+import { embedText, isEmbeddingConfigured } from "@/lib/ai/provider"
 import { auth } from "@/lib/auth/config"
 import { prisma } from "@/lib/prisma"
 
@@ -12,8 +12,8 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ ok: true, results: [] })
     }
-    if (!isOpenAIConfigured()) {
-      return NextResponse.json({ ok: false, error: "OPENAI_API_KEY missing" }, { status: 503 })
+    if (!isEmbeddingConfigured()) {
+      return NextResponse.json({ ok: true, results: [] })
     }
 
     const signals = await prisma.save.findMany({
@@ -40,7 +40,7 @@ export async function GET() {
 
     const embedding = await embedText(text)
     if (!embedding) {
-      return NextResponse.json({ ok: false, error: "embed failed" }, { status: 500 })
+      return NextResponse.json({ ok: true, results: [] })
     }
 
     const matches = await prisma.$queryRaw<Array<{ id: string }>>`

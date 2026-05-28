@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 
-import { embedText, isOpenAIConfigured } from "@/lib/ai/openai"
+import { embedText, isEmbeddingConfigured } from "@/lib/ai/provider"
 import { auth } from "@/lib/auth/config"
 import { prisma } from "@/lib/prisma"
 
@@ -8,8 +8,8 @@ export const runtime = "nodejs"
 
 export async function POST(request: NextRequest) {
   try {
-    if (!isOpenAIConfigured()) {
-      return NextResponse.json({ ok: false, error: "OPENAI_API_KEY missing" }, { status: 503 })
+    if (!isEmbeddingConfigured()) {
+      return NextResponse.json({ ok: false, error: "AI_EMBEDDING_KEY not configured" }, { status: 503 })
     }
 
     const { artworkId } = (await request.json()) as { artworkId?: string }

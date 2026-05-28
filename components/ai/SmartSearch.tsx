@@ -35,23 +35,32 @@ export function SmartSearch({
   const [q, setQ] = useState(initialQuery)
   const [results, setResults] = useState<Result[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [unavailable, setUnavailable] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const search = async (query: string) => {
     setError(null)
     setResults(null)
     if (!query.trim()) return
-    const res = await fetch("/api/ai/search", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ q: query, kind: "artworks", limit: 12 }),
-    })
-    const json = await res.json()
-    if (!res.ok || !json.ok) {
-      setError(json.error ?? "Search failed.")
-      return
+    try {
+      const res = await fetch("/api/ai/search", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ q: query, kind: "artworks", limit: 12 }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.ok) {
+        if (json.configured === false) {
+          setUnavailable(true)
+          return
+        }
+        setError(json.error ?? "Search failed.")
+        return
+      }
+      setResults(json.results)
+    } catch {
+      setError("Network error — please try again.")
     }
-    setResults(json.results)
   }
 
   useEffect(() => {
@@ -84,7 +93,13 @@ export function SmartSearch({
         </Button>
       </form>
 
-      {error ? (
+      {unavailable ? (
+        <p className="text-sm text-muted-foreground">
+          AI search is not available yet — add{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">OPENAI_API_KEY</code>{" "}
+          to <code className="rounded bg-muted px-1 py-0.5 text-xs">.env.local</code> to enable.
+        </p>
+      ) : error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>

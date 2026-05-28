@@ -542,13 +542,13 @@ Trending cache expires after 300 seconds (MongoDB TTL index). User interest vect
 1. Push your repository to GitHub
 2. Go to [vercel.com](https://vercel.com) → **New Project** → import your repo
 3. In **Settings → Environment Variables**, add every variable from `.env.local`
-4. Set `NEXTAUTH_URL` to your production domain (e.g. `https://dwellika.com`)
+4. Set `NEXTAUTH_URL` to your production domain (e.g. `https://dwellika.in`)
 5. Set **Node.js Version** to 18.x or 20.x in **Settings → General**
 6. Click **Deploy**
 
 After the first deploy, set up webhooks:
-- **Razorpay:** Dashboard → Webhooks → `https://yourdomain.com/api/razorpay/webhook`
-- **Stripe:** Dashboard → Developers → Webhooks → `https://yourdomain.com/api/stripe/webhook`
+- **Razorpay:** Dashboard → Webhooks → `https://dwellika.in/api/razorpay/webhook`
+- **Stripe:** Dashboard → Developers → Webhooks → `https://dwellika.in/api/stripe/webhook`
 
 ### Security headers
 

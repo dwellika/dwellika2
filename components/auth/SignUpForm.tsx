@@ -6,6 +6,7 @@ import { signUpWithPassword } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Label } from "@/components/ui/label"
 
 export function SignUpForm() {
@@ -66,10 +67,9 @@ export function SignUpForm() {
 
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}
@@ -79,10 +79,9 @@ export function SignUpForm() {
 
       <div className="space-y-2">
         <Label htmlFor="confirmPassword">Confirm password</Label>
-        <Input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}

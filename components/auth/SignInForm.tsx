@@ -6,6 +6,7 @@ import { useState, useTransition } from "react"
 import { signInWithPassword } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Label } from "@/components/ui/label"
 
 export function SignInForm({ next = "/" }: { next?: string }) {
@@ -46,10 +47,9 @@ export function SignInForm({ next = "/" }: { next?: string }) {
             Forgot?
           </Link>
         </div>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           minLength={8}

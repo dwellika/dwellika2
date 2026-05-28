@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 
-import { getOpenAI, VISION_MODEL, isOpenAIConfigured } from "@/lib/ai/openai"
+import { getChatClient, VISION_MODEL, isAIConfigured } from "@/lib/ai/provider"
 import { auth } from "@/lib/auth/config"
 
 export const runtime = "nodejs"
@@ -17,8 +17,8 @@ Return ONLY the JSON object, no prose, no markdown.`
 
 export async function POST(request: NextRequest) {
   try {
-    if (!isOpenAIConfigured()) {
-      return NextResponse.json({ ok: false, error: "OPENAI_API_KEY missing" }, { status: 503 })
+    if (!isAIConfigured()) {
+      return NextResponse.json({ ok: false, error: "AI provider not configured. Add GROQ_API_KEY to .env.local." }, { status: 503 })
     }
     const { imageUrl } = (await request.json()) as { imageUrl?: string }
     if (!imageUrl) {
@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 })
     }
 
-    const client = getOpenAI()
+    const client = getChatClient()
     if (!client) {
-      return NextResponse.json({ ok: false, error: "OpenAI not initialised" }, { status: 503 })
+      return NextResponse.json({ ok: false, error: "AI provider not initialised" }, { status: 503 })
     }
 
     const completion = await client.chat.completions.create({

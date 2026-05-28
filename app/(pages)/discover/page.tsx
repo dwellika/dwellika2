@@ -1,7 +1,7 @@
 import { Sparkles } from "lucide-react"
 
 import { SmartSearch } from "@/components/ai/SmartSearch"
-import { isOpenAIConfigured } from "@/lib/ai/openai"
+import { isEmbeddingConfigured } from "@/lib/ai/provider"
 
 export const metadata = {
   title: "Discover",
@@ -28,10 +28,10 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
         </p>
       </header>
 
-      {!isOpenAIConfigured() ? (
+      {!isEmbeddingConfigured() ? (
         <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
           AI search is disabled. Add{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5">OPENAI_API_KEY</code>{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">AI_EMBEDDING_KEY</code>{" "}
           to <code>.env.local</code> to enable.
         </div>
       ) : null}
