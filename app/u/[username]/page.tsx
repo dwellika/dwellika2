@@ -116,7 +116,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const initials =
     profile.full_name
       ?.split(" ")
-      .map((p) => p[0])
+      .map((p: any) => p[0])
       .join("")
       .slice(0, 2)
       .toUpperCase() ?? profile.username?.slice(0, 2).toUpperCase() ?? "DW"
@@ -203,7 +203,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
 
             {profile.interests?.length ? (
               <div className="mt-4 flex flex-wrap gap-2">
-                {profile.interests.map((i) => (
+                {profile.interests.map((i: any) => (
                   <Badge key={i} variant="secondary">
                     {i}
                   </Badge>
@@ -263,63 +263,63 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
         </Card>
 
         <Tabs defaultValue={tab} className="mt-10">
-            <TabsList className="overflow-x-auto">
-              <TabsTrigger value="portfolio">Portfolio · {artworks.length}</TabsTrigger>
-              <TabsTrigger value="reels">Reels · {reels.length}</TabsTrigger>
-              <TabsTrigger value="store">Store · {products.length}</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews · {reviewStats.count}</TabsTrigger>
-              <TabsTrigger value="exhibitions">Exhibitions</TabsTrigger>
-              <TabsTrigger value="workshops">Workshops</TabsTrigger>
-              <TabsTrigger value="competitions">Competitions</TabsTrigger>
-              <TabsTrigger value="followers">Followers · {followers}</TabsTrigger>
-            </TabsList>
+          <TabsList className="overflow-x-auto">
+            <TabsTrigger value="portfolio">Portfolio · {artworks.length}</TabsTrigger>
+            <TabsTrigger value="reels">Reels · {reels.length}</TabsTrigger>
+            <TabsTrigger value="store">Store · {products.length}</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews · {reviewStats.count}</TabsTrigger>
+            <TabsTrigger value="exhibitions">Exhibitions</TabsTrigger>
+            <TabsTrigger value="workshops">Workshops</TabsTrigger>
+            <TabsTrigger value="competitions">Competitions</TabsTrigger>
+            <TabsTrigger value="followers">Followers · {followers}</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="portfolio">
-              {artworks.length === 0 ? (
-                <Empty label="portfolio" />
-              ) : (
-                <PortfolioMasonry artworks={artworks} isAuthed={Boolean(viewer)} />
-              )}
-            </TabsContent>
+          <TabsContent value="portfolio">
+            {artworks.length === 0 ? (
+              <Empty label="portfolio" />
+            ) : (
+              <PortfolioMasonry artworks={artworks} isAuthed={Boolean(viewer)} />
+            )}
+          </TabsContent>
 
-            <TabsContent value="reels">
-              {reels.length === 0 ? (
-                <Empty label="reels" />
-              ) : (
-                <ReelsGrid reels={reels} />
-              )}
-            </TabsContent>
+          <TabsContent value="reels">
+            {reels.length === 0 ? (
+              <Empty label="reels" />
+            ) : (
+              <ReelsGrid reels={reels} />
+            )}
+          </TabsContent>
 
-            <TabsContent value="store">
-              {products.length === 0 ? (
-                <Empty label="products" />
-              ) : (
-                <StoreGrid products={products} isAuthed={Boolean(viewer)} sellerUsername={profile.username} />
-              )}
-            </TabsContent>
+          <TabsContent value="store">
+            {products.length === 0 ? (
+              <Empty label="products" />
+            ) : (
+              <StoreGrid products={products} isAuthed={Boolean(viewer)} sellerUsername={profile.username} />
+            )}
+          </TabsContent>
 
-            <TabsContent value="reviews">
-              {reviews.length === 0 ? (
-                <Empty label="reviews" />
-              ) : (
-                <ReviewsList reviews={reviews} />
-              )}
-            </TabsContent>
+          <TabsContent value="reviews">
+            {reviews.length === 0 ? (
+              <Empty label="reviews" />
+            ) : (
+              <ReviewsList reviews={reviews} />
+            )}
+          </TabsContent>
 
-            <TabsContent value="exhibitions">
-              <Empty label="exhibitions" hint="Exhibitions launch in Phase 3." />
-            </TabsContent>
-            <TabsContent value="workshops">
-              <Empty label="workshops" hint="Workshop hosting launches in Phase 3." />
-            </TabsContent>
-            <TabsContent value="competitions">
-              <Empty label="competitions" hint="Competition entries launch in Phase 3." />
-            </TabsContent>
+          <TabsContent value="exhibitions">
+            <Empty label="exhibitions" hint="Exhibitions launch in Phase 3." />
+          </TabsContent>
+          <TabsContent value="workshops">
+            <Empty label="workshops" hint="Workshop hosting launches in Phase 3." />
+          </TabsContent>
+          <TabsContent value="competitions">
+            <Empty label="competitions" hint="Competition entries launch in Phase 3." />
+          </TabsContent>
 
-            <TabsContent value="followers">
-              <FollowersTab userId={profile.id} />
-            </TabsContent>
-          </Tabs>
+          <TabsContent value="followers">
+            <FollowersTab userId={profile.id} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
@@ -363,7 +363,7 @@ function PortfolioMasonry({
 }) {
   return (
     <div className="mt-6 columns-2 gap-4 [column-fill:_balance] sm:columns-3 lg:columns-4">
-      {artworks.map((a) => {
+      {artworks.map((a: any) => {
         const artistRef = a.artist ?? null
         return (
           <div key={a.id} className="mb-4 break-inside-avoid">
@@ -395,7 +395,7 @@ function StoreGrid({
 }) {
   return (
     <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {products.map((p) => (
+      {products.map((p: any) => (
         <ProductCard
           key={p.id}
           product={p}
@@ -437,7 +437,7 @@ function ReelsGrid({ reels }: { reels: Awaited<ReturnType<typeof listReels>> }) 
 function ReviewsList({ reviews }: { reviews: Awaited<ReturnType<typeof listReviews>> }) {
   return (
     <div className="mt-6 grid gap-4 md:grid-cols-2">
-      {reviews.map((r) => (
+      {reviews.map((r: any) => (
         <Card key={r.id}>
           <CardContent className="space-y-2 p-5">
             <div className="flex items-center gap-3">
@@ -475,7 +475,7 @@ async function FollowersTab({ userId }: { userId: string }) {
     take: 60,
   })
 
-  const followers = follows.map((f) => f.follower)
+  const followers = follows.map((f: any) => f.follower)
 
   if (followers.length === 0) {
     return <Empty label="followers" />
@@ -483,7 +483,7 @@ async function FollowersTab({ userId }: { userId: string }) {
 
   return (
     <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-      {followers.map((f) => (
+      {followers.map((f: any) => (
         <Link
           key={f.id}
           href={`/u/${f.username}`}

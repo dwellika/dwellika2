@@ -46,7 +46,7 @@ export default async function CoursesPage({ searchParams }: PageProps) {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input name="q" defaultValue={q ?? ""} placeholder="Search courses…" className="pl-9" />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <Pill href="/courses" label="All" active={!level && !free} />
           {LEVELS.map((l) => (
             <Pill
@@ -126,8 +126,8 @@ function Pill({ href, label, active }: { href: string; label: string; active: bo
       href={href}
       className={
         active
-          ? "rounded-full border border-primary bg-primary/15 px-3 py-1 text-xs font-medium capitalize text-primary"
-          : "rounded-full border border-border bg-muted/30 px-3 py-1 text-xs capitalize text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+          ? "shrink-0 rounded-full border border-primary bg-primary/15 px-3 py-1 text-xs font-medium capitalize text-primary"
+          : "shrink-0 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs capitalize text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
       }
     >
       {label}

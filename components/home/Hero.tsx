@@ -111,7 +111,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="relative isolate flex min-h-[92vh] items-center overflow-hidden"
+      className="relative isolate flex min-h-[100svh] items-center overflow-hidden md:min-h-[92vh]"
     >
       <div className="aurora-bg" aria-hidden="true" />
       <Particles />
@@ -178,7 +178,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 max-w-4xl font-display text-5xl leading-[1.05] md:text-7xl lg:text-8xl"
+          className="mt-6 max-w-4xl font-display text-4xl leading-[1.05] sm:text-5xl md:text-7xl lg:text-8xl"
         >
           <span className="gradient-text">A living museum</span>
           <br />
@@ -224,7 +224,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5 }}
-          className="mt-14 grid w-full max-w-3xl grid-cols-3 gap-6 text-center"
+          className="mt-10 grid w-full max-w-3xl grid-cols-3 gap-3 text-center sm:mt-14 sm:gap-6"
         >
           <Stat value="12k+" label="Artists" />
           <Stat value="380k+" label="Artworks" />
@@ -241,7 +241,7 @@ export function Hero() {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <p className="font-display text-3xl md:text-4xl">{value}</p>
+      <p className="font-display text-2xl sm:text-3xl md:text-4xl">{value}</p>
       <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
     </div>
   )

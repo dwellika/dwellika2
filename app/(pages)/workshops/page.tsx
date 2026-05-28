@@ -42,7 +42,7 @@ export default async function WorkshopsPage() {
         {upcoming.length === 0 ? (
           <Empty />
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 md:gap-5 md:grid-cols-2 lg:grid-cols-3">
             {upcoming.map((w) => (
               <WorkshopCard key={w.id} workshop={w} />
             ))}
@@ -53,7 +53,7 @@ export default async function WorkshopsPage() {
       {pastOnly.length > 0 ? (
         <section>
           <h2 className="mb-4 font-display text-xl">Past sessions</h2>
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 md:gap-5 md:grid-cols-2 lg:grid-cols-3">
             {pastOnly.map((w) => (
               <WorkshopCard key={w.id} workshop={w} past />
             ))}

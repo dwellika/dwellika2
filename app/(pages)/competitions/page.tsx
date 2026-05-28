@@ -68,7 +68,7 @@ export default async function CompetitionsPage() {
       </header>
 
       <Tabs defaultValue="open" className="mt-4">
-        <TabsList>
+        <TabsList className="overflow-x-auto scrollbar-none">
           <TabsTrigger value="open">Open · {usingMock ? mockOpen.length : open.length}</TabsTrigger>
           <TabsTrigger value="upcoming">Upcoming · {upcoming.length}</TabsTrigger>
           <TabsTrigger value="past">Past winners · {past.length}</TabsTrigger>
@@ -94,7 +94,7 @@ function Grid({ items }: { items: Awaited<ReturnType<typeof listCompetitions>> }
       {items.map((c) => (
         <Link key={c.id} href={`/competitions/${c.slug}`}>
           <Card className="group h-full overflow-hidden transition-all hover:border-primary/40">
-            <div className="relative h-44 w-full overflow-hidden">
+            <div className="relative aspect-[2/1] w-full overflow-hidden">
               <SmartImage
                 src={c.banner_url}
                 alt={c.title}

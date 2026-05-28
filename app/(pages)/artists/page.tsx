@@ -91,7 +91,7 @@ export default async function ArtistsPage({ searchParams }: PageProps) {
             className="pl-9"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <FilterPill href="/artists" label="All" active={!medium} />
           {MEDIUMS.map((m) => (
             <FilterPill
@@ -142,8 +142,8 @@ function FilterPill({
       href={href}
       className={
         active
-          ? "rounded-full border border-primary bg-primary/15 px-3 py-1 text-xs font-medium text-primary"
-          : "rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+          ? "shrink-0 rounded-full border border-primary bg-primary/15 px-3 py-1 text-xs font-medium text-primary"
+          : "shrink-0 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
       }
     >
       {label}

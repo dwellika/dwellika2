@@ -66,8 +66,8 @@ const LEGAL = [
 export function Footer() {
   return (
     <footer className="border-t border-border/60 bg-card/40">
-      <div className="container-page py-16">
-        <div className="grid gap-12 lg:grid-cols-[1.2fr_2fr]">
+      <div className="container-page py-10 lg:py-16">
+        <div className="grid gap-8 lg:gap-12 lg:grid-cols-[1.2fr_2fr]">
           <div>
             <Link href="/" className="flex items-center gap-2">
               <span className="relative size-9 overflow-hidden rounded-md">

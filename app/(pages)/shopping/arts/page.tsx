@@ -67,7 +67,7 @@ export default async function ArtsPage({ searchParams }: PageProps) {
 
       {usingMock ? (
         <>
-          <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-5 md:grid-cols-3 lg:grid-cols-4">
             {MOCK_ARTWORKS.slice(0, 12).map((w) => (
               <a
                 key={w.id}
@@ -93,7 +93,7 @@ export default async function ArtsPage({ searchParams }: PageProps) {
           </p>
         </>
       ) : (
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:gap-5 md:grid-cols-3 lg:grid-cols-4">
           {artworks.map((a) => (
             <ArtworkCard
               key={a.id}

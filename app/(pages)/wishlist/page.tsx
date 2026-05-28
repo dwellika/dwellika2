@@ -75,7 +75,7 @@ export default async function WishlistPage() {
       {artworks.length > 0 ? (
         <section className="mb-12">
           <h2 className="mb-4 font-display text-xl">Artworks</h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {artworks.map((a) => {
               const img = a.artwork_media.find((m) => m.is_primary)?.url ?? a.artwork_media[0]?.url
               const href = a.artist?.username
@@ -116,7 +116,7 @@ export default async function WishlistPage() {
       {products.length > 0 ? (
         <section>
           <h2 className="mb-4 font-display text-xl">Products</h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {products.map((p) => {
               const img = p.product_media.find((m) => m.is_primary)?.url ?? p.product_media[0]?.url
               const href = p.seller?.username

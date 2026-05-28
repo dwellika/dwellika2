@@ -56,7 +56,7 @@ export function FeaturedCollections() {
         </div>
 
         {/* Masonry */}
-        <div className="columns-2 gap-3 [column-fill:_balance] sm:columns-3">
+        <div className="columns-1 gap-3 [column-fill:_balance] sm:columns-2 md:columns-3">
           {masonry.map((w, i) => (
             <motion.figure
               key={w.id}

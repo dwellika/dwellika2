@@ -590,7 +590,7 @@ function ReelItem({
         ))}
 
         {/* Right side action buttons */}
-        <div className="absolute bottom-28 right-3 flex flex-col items-center gap-4">
+        <div className="absolute bottom-32 right-3 flex flex-col items-center gap-4 md:bottom-28" style={{ bottom: "max(8rem, calc(6rem + env(safe-area-inset-bottom, 0px)))" }}>
           {/* Like */}
           <div className="flex flex-col items-center gap-0.5">
             <button
@@ -674,7 +674,7 @@ function ReelItem({
         </div>
 
         {/* Bottom info overlay */}
-        <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 px-4 pb-6 text-white">
+        <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 px-4 pb-8 text-white md:pb-6" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 2rem))" }}>
           {/* BUY CTA */}
           {showBuy && (
             <Link
@@ -857,7 +857,7 @@ function CommentsDrawer({ reel, isAuthed, onClose }: CommentsDrawerProps) {
       {/* Drawer */}
       <div
         className={cn(
-          "fixed inset-x-0 bottom-0 z-[70] flex max-h-[75dvh] flex-col rounded-t-2xl bg-neutral-950 transition-transform duration-300",
+          "fixed inset-x-0 bottom-0 z-[70] flex max-h-[85dvh] flex-col rounded-t-2xl bg-neutral-950 transition-transform duration-300 md:max-h-[75dvh]",
           open ? "translate-y-0" : "translate-y-full",
         )}
       >

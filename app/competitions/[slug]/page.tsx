@@ -172,7 +172,7 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3">
                   {subs.map((s) => {
                     const voted = myVotes.has(s.id)
                     return (
