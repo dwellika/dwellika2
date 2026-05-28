@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { LogOut, MessageSquare, Settings, ShieldAlert, ShoppingBag, Heart, User2 } from "lucide-react"
+import { LogOut, MessageSquare, Settings, ShieldAlert, ShoppingBag, Heart, User2, UserCircle2 } from "lucide-react"
 import { useEffect, useState, useTransition } from "react"
 
 import { signOutAction as signOut } from "@/app/(auth)/actions"
@@ -40,11 +40,19 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" asChild>
+      <div className="flex items-center gap-1">
+        {/* xs / small phones: single icon → sign in page */}
+        <Button variant="ghost" size="icon" asChild className="size-9 sm:hidden" aria-label="Sign in">
+          <Link href="/signin">
+            <UserCircle2 className="size-[18px]" />
+          </Link>
+        </Button>
+
+        {/* sm and up: full text buttons */}
+        <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
           <Link href="/signin">Sign in</Link>
         </Button>
-        <Button asChild>
+        <Button size="sm" asChild className="hidden sm:inline-flex">
           <Link href="/signup">Join Dwellika</Link>
         </Button>
       </div>

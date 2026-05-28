@@ -26,7 +26,9 @@ function timeLeft(dateStr: string | null) {
 export const revalidate = 60
 
 export default async function CompetitionsPage() {
-  const all = await listCompetitions({ status: "all", limit: 60 })
+  // .catch() keeps the build alive when Railway is unreachable at build time.
+  // The page already handles empty arrays with MOCK_COMPETITIONS fallback.
+  const all = await listCompetitions({ status: "all", limit: 60 }).catch(() => [])
 
   const open = all.filter((c) => c.status === "submissions_open" || c.status === "voting")
   const upcoming = all.filter((c) => c.status === "announced" || c.status === "draft")

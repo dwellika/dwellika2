@@ -18,7 +18,9 @@ export const revalidate = 60
 export default async function HomePage() {
   // Live-data-with-fallback for Trending Artists. Other sections continue
   // to use mock fixtures until their domains are connected in Phase 3.
-  const { artists } = await listArtists({ limit: 8 })
+  // .catch() keeps the build alive when Railway is unreachable at build time.
+  // ISR (revalidate=60) then fills real data on the first production request.
+  const { artists } = await listArtists({ limit: 8 }).catch(() => ({ artists: [], count: 0 }))
 
   const trending: MockArtist[] = artists.map((a) => ({
     id: a.id,

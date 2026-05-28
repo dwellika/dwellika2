@@ -3,10 +3,12 @@
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { useState } from "react"
+import { usePathname } from "next/navigation"
 import { Heart, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { SmartImage } from "@/components/ui/smart-image"
+import { cn } from "@/lib/utils"
 
 import { CartIndicator } from "./CartIndicator"
 import { CommandTrigger } from "./CommandMenu"
@@ -23,14 +25,23 @@ import { UserMenu } from "./UserMenu"
 
 export function Navbar() {
   const [cmdOpen, setCmdOpen] = useState(false)
+  const pathname = usePathname()
+  const isReels = pathname === "/reels" || pathname.startsWith("/reels/")
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/70 backdrop-blur-xl">
-      <div className="container-page flex h-16 items-center gap-4">
+    <header
+      className={cn(
+        "sticky top-0 z-40 w-full border-b border-border/60 bg-background/70 backdrop-blur-xl",
+        isReels && "max-md:hidden",
+      )}
+    >
+      <div className="container-page flex h-14 items-center gap-2 sm:h-16 sm:gap-3">
+        {/* Hamburger — mobile/tablet only */}
         <MobileNav />
 
-        <Link href="/" className="flex items-center gap-2">
-          <span className="relative size-8 overflow-hidden rounded-md">
+        {/* Logo */}
+        <Link href="/" className="flex shrink-0 items-center gap-2">
+          <span className="relative size-7 overflow-hidden rounded-md sm:size-8">
             <SmartImage
               src="/images/brand/logo.svg"
               alt="Dwellika"
@@ -41,39 +52,54 @@ export function Navbar() {
               className="object-cover"
             />
           </span>
-          <span className="font-display text-xl tracking-tight">Dwellika</span>
+          <span className="font-display text-lg tracking-tight sm:text-xl">Dwellika</span>
         </Link>
 
+        {/* Desktop nav links */}
         <div className="ml-2 hidden md:block">
           <MainNav />
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        {/* Right action cluster */}
+        <div className="ml-auto flex items-center gap-0.5 sm:gap-1.5">
+          {/* Desktop search bar */}
           <CommandTrigger onOpen={() => setCmdOpen(true)} />
 
+          {/* Mobile search icon */}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="size-9 md:hidden"
             onClick={() => setCmdOpen(true)}
             aria-label="Search"
           >
-            <Search className="size-5" />
+            <Search className="size-[18px]" />
           </Button>
 
-          <Button variant="ghost" size="icon" asChild aria-label="Wishlist">
-            <Link href="/wishlist"><Heart className="size-5" /></Link>
+          {/* Wishlist — sm and up */}
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            aria-label="Wishlist"
+            className="hidden size-9 sm:inline-flex"
+          >
+            <Link href="/wishlist">
+              <Heart className="size-[18px]" />
+            </Link>
           </Button>
 
-          <ModeToggle className="relative hidden sm:inline-flex" />
+          {/* Theme toggle — sm and up */}
+          <ModeToggle className="relative hidden size-9 sm:inline-flex" />
 
+          {/* Notification bell — md and up (handled inside component too) */}
           <NotificationBell />
 
+          {/* Cart — always visible */}
           <CartIndicator />
 
-          <div className="ml-1">
-            <UserMenu />
-          </div>
+          {/* User menu */}
+          <UserMenu />
         </div>
       </div>
 
