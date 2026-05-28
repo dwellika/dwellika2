@@ -3,90 +3,32 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Bell } from "lucide-react"
-import { toast } from "sonner"
 
+import { useUser } from "@/lib/auth/use-user"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
 
 export function NotificationBell() {
+  const { user } = useUser()
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    let cancelled = false
-    const supabase = createClient()
-    let channel: ReturnType<typeof supabase.channel> | null = null
+    if (!user) return
 
-    const setup = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user || cancelled) return
-
-      // Initial count
-      const { count: c } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .is("read_at", null)
-      if (!cancelled) setCount(c ?? 0)
-
-      // Subscribe to inserts on this user's notifications
-      channel = supabase
-        .channel(`notifications:${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            const row = payload.new as { title?: string; body?: string | null; action_url?: string | null }
-            setCount((c) => c + 1)
-            toast(row.title ?? "New notification", {
-              description: row.body ?? undefined,
-              action: row.action_url
-                ? {
-                    label: "Open",
-                    onClick: () => {
-                      window.location.href = row.action_url!
-                    },
-                  }
-                : undefined,
-            })
-          },
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            // when something gets marked read, refresh
-            supabase
-              .from("notifications")
-              .select("*", { count: "exact", head: true })
-              .eq("user_id", user.id)
-              .is("read_at", null)
-              .then(({ count: c }) => {
-                if (!cancelled) setCount(c ?? 0)
-              })
-          },
-        )
-        .subscribe()
+    const fetchCount = async () => {
+      try {
+        const res = await fetch("/api/notifications/unread-count")
+        if (!res.ok) return
+        const data = (await res.json()) as { count: number }
+        setCount(data.count ?? 0)
+      } catch {
+        // network error — retry next tick
+      }
     }
 
-    setup()
-
-    return () => {
-      cancelled = true
-      if (channel) channel.unsubscribe()
-    }
-  }, [])
+    void fetchCount()
+    const interval = setInterval(fetchCount, 30_000)
+    return () => clearInterval(interval)
+  }, [user])
 
   return (
     <Button

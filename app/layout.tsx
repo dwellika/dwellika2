@@ -11,6 +11,7 @@ import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Providers } from "@/components/providers"
 import { cn } from "@/lib/utils"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" })
@@ -75,6 +76,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <body className="font-sans antialiased">
+        <Providers>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
 
           <TooltipProvider>
@@ -88,6 +90,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <InstallPrompt />
           <ServiceWorkerRegister />
         </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )

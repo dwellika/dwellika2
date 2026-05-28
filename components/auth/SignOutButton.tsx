@@ -2,7 +2,7 @@
 
 import { useTransition } from "react"
 
-import { signOut } from "@/app/(auth)/actions"
+import { signOutAction as signOut } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
 
 export function SignOutButton({

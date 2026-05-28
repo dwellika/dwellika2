@@ -20,7 +20,7 @@ const fmt = (iso: string) =>
     minute: "2-digit",
   })
 
-export const revalidate = 60
+export const dynamic = "force-dynamic"
 
 export default async function WorkshopsPage() {
   const upcoming = await listWorkshops({ upcomingOnly: true, limit: 30 })

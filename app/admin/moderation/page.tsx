@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { requireRole } from "@/lib/auth/rbac"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { prisma } from "@/lib/prisma"
 
 import { ModerationActions } from "./ModerationActions"
 
@@ -20,109 +20,90 @@ interface ModItem {
 }
 
 async function fetchSurfaces() {
-  const admin = createAdminClient()
-
   const [artworks, reels, posts, subs] = await Promise.all([
-    admin
-      .from("artworks")
-      .select(
-        `id, title, created_at, artist:profiles!artworks_artist_id_fkey(username, full_name), artwork_media(url, is_primary), slug`,
-      )
-      .eq("status", "pending")
-      .order("created_at", { ascending: true }),
-    admin
-      .from("reels")
-      .select(
-        `id, caption, thumbnail_url, created_at, creator:profiles!reels_creator_id_fkey(username, full_name)`,
-      )
-      .eq("status", "pending")
-      .order("created_at", { ascending: true }),
-    admin
-      .from("community_posts")
-      .select(
-        `id, title, body, media, created_at, community_id, author:profiles!community_posts_author_id_fkey(username, full_name)`,
-      )
-      .eq("status", "pending")
-      .order("created_at", { ascending: true }),
-    admin
-      .from("competition_submissions")
-      .select(
-        `id, title, media_url, created_at, competition:competitions!competition_submissions_competition_id_fkey(slug), artist:profiles!competition_submissions_artist_id_fkey(username, full_name)`,
-      )
-      .eq("status", "pending")
-      .order("created_at", { ascending: true }),
+    prisma.artwork.findMany({
+      where: { status: "pending" },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        created_at: true,
+        artist: { select: { username: true, full_name: true } },
+        artwork_media: { select: { url: true, is_primary: true }, take: 2 },
+      },
+      orderBy: { created_at: "asc" },
+    }),
+    prisma.reel.findMany({
+      where: { status: "pending" },
+      select: {
+        id: true,
+        caption: true,
+        thumbnail_url: true,
+        created_at: true,
+        creator: { select: { username: true, full_name: true } },
+      },
+      orderBy: { created_at: "asc" },
+    }),
+    prisma.communityPost.findMany({
+      where: { status: "pending" },
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        media: true,
+        created_at: true,
+        community_id: true,
+        author: { select: { username: true, full_name: true } },
+      },
+      orderBy: { created_at: "asc" },
+    }),
+    prisma.competitionSubmission.findMany({
+      where: { status: "pending" },
+      select: {
+        id: true,
+        title: true,
+        media_url: true,
+        created_at: true,
+        competition: { select: { slug: true } },
+        artist: { select: { username: true, full_name: true } },
+      },
+      orderBy: { created_at: "asc" },
+    }),
   ])
 
-  const mapArtworks: ModItem[] = (
-    (artworks.data ?? []) as unknown as Array<{
-      id: string
-      title: string
-      slug: string
-      created_at: string
-      artist: { username: string | null; full_name: string | null } | null
-      artwork_media: { url: string; is_primary: boolean }[]
-    }>
-  ).map((a) => ({
+  const mapArtworks: ModItem[] = artworks.map((a) => ({
     id: a.id,
     title: a.title,
-    preview_url:
-      a.artwork_media.find((m) => m.is_primary)?.url ?? a.artwork_media[0]?.url ?? null,
+    preview_url: a.artwork_media.find((m) => m.is_primary)?.url ?? a.artwork_media[0]?.url ?? null,
     author: a.artist ? (a.artist.full_name ?? `@${a.artist.username}`) : null,
-    created_at: a.created_at,
+    created_at: a.created_at.toISOString(),
     href: a.artist?.username ? `/artworks/${a.artist.username}/${a.slug}` : null,
   }))
 
-  const mapReels: ModItem[] = (
-    (reels.data ?? []) as unknown as Array<{
-      id: string
-      caption: string | null
-      thumbnail_url: string | null
-      created_at: string
-      creator: { username: string | null; full_name: string | null } | null
-    }>
-  ).map((r) => ({
+  const mapReels: ModItem[] = reels.map((r) => ({
     id: r.id,
     title: r.caption ?? "Reel",
     preview_url: r.thumbnail_url,
     author: r.creator ? (r.creator.full_name ?? `@${r.creator.username}`) : null,
-    created_at: r.created_at,
+    created_at: r.created_at.toISOString(),
     href: `/reels#${r.id}`,
   }))
 
-  const mapPosts: ModItem[] = (
-    (posts.data ?? []) as unknown as Array<{
-      id: string
-      title: string | null
-      body: string | null
-      media: { url: string; kind: string }[] | null
-      created_at: string
-      community_id: string
-      author: { username: string | null; full_name: string | null } | null
-    }>
-  ).map((p) => ({
+  const mapPosts: ModItem[] = posts.map((p) => ({
     id: p.id,
     title: p.title ?? p.body?.slice(0, 80) ?? "Post",
-    preview_url: (p.media ?? []).find((m) => m.kind === "image")?.url ?? null,
+    preview_url: ((p.media as Array<{ url: string; kind: string }> | null) ?? []).find((m) => m.kind === "image")?.url ?? null,
     author: p.author ? (p.author.full_name ?? `@${p.author.username}`) : null,
-    created_at: p.created_at,
+    created_at: p.created_at.toISOString(),
     href: null,
   }))
 
-  const mapSubs: ModItem[] = (
-    (subs.data ?? []) as unknown as Array<{
-      id: string
-      title: string
-      media_url: string
-      created_at: string
-      competition: { slug: string } | null
-      artist: { username: string | null; full_name: string | null } | null
-    }>
-  ).map((s) => ({
+  const mapSubs: ModItem[] = subs.map((s) => ({
     id: s.id,
     title: s.title,
     preview_url: s.media_url,
     author: s.artist ? (s.artist.full_name ?? `@${s.artist.username}`) : null,
-    created_at: s.created_at,
+    created_at: s.created_at.toISOString(),
     href: s.competition ? `/competitions/${s.competition.slug}` : null,
   }))
 
@@ -157,13 +138,11 @@ export default async function ModerationPage() {
           </TabsTrigger>
         </TabsList>
 
-        {(["artworks", "reels", "community_posts", "competition_submissions"] as const).map(
-          (key) => (
-            <TabsContent key={key} value={key}>
-              <Queue surface={key} items={surfaces[key]} />
-            </TabsContent>
-          ),
-        )}
+        {(["artworks", "reels", "community_posts", "competition_submissions"] as const).map((key) => (
+          <TabsContent key={key} value={key}>
+            <Queue surface={key} items={surfaces[key]} />
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   )

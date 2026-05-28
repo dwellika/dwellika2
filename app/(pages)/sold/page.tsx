@@ -4,7 +4,7 @@ import { TrendingUp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { SmartImage } from "@/components/ui/smart-image"
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { MOCK_SALES } from "@/lib/mock/home"
 
 export const metadata = {
@@ -12,31 +12,24 @@ export const metadata = {
   description: "Fresh out of the studios — works that found their forever homes.",
 }
 
-export const revalidate = 120
-
-interface SoldRow {
-  id: string
-  title: string
-  image_url: string | null
-  subtotal: number
-  unit_price: number
-  quantity: number
-  order: { currency: string; created_at: string; status: string } | null
-}
+export const dynamic = "force-dynamic"
 
 export default async function SoldPage() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from("order_items")
-    .select(
-      `id, title, image_url, subtotal, unit_price, quantity,
-       order:orders!order_items_order_id_fkey ( currency, created_at, status )`,
-    )
-    .eq("target_kind", "artwork")
-    .order("id", { ascending: false })
-    .limit(60)
+  const rows = await prisma.orderItem.findMany({
+    where: { target_kind: "artwork" },
+    select: {
+      id: true,
+      title: true,
+      image_url: true,
+      subtotal: true,
+      unit_price: true,
+      quantity: true,
+      order: { select: { currency: true, created_at: true, status: true } },
+    },
+    orderBy: { id: "desc" },
+    take: 60,
+  })
 
-  const rows = (data ?? []) as unknown as SoldRow[]
   const filtered = rows.filter(
     (r) => r.order && ["confirmed", "shipped", "delivered"].includes(r.order.status),
   )
@@ -49,8 +42,7 @@ export default async function SoldPage() {
         </p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">Recently sold</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Fresh out of the studios — works that found their forever homes this
-          week.
+          Fresh out of the studios — works that found their forever homes this week.
         </p>
       </header>
 
@@ -113,7 +105,7 @@ export default async function SoldPage() {
                 </p>
                 <p className="pt-1 font-display text-lg tabular-nums">
                   {s.order?.currency ?? "INR"}{" "}
-                  {Number(s.subtotal ?? s.unit_price * s.quantity).toLocaleString()}
+                  {Number(s.subtotal ?? Number(s.unit_price) * s.quantity).toLocaleString()}
                 </p>
               </CardContent>
             </Card>

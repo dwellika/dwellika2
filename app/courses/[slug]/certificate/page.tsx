@@ -3,7 +3,6 @@ import { Award } from "lucide-react"
 
 import { requireAuth } from "@/lib/auth/rbac"
 import { getCourseBySlug, getCertificate } from "@/lib/data/learning"
-import { createClient } from "@/lib/supabase/server"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -17,15 +16,7 @@ export default async function CertificatePage({ params }: PageProps) {
   const cert = await getCertificate(course.id, user.id)
   if (!cert) notFound()
 
-  const supabase = await createClient()
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, username")
-    .eq("id", user.id)
-    .maybeSingle()
-  const recipient =
-    (profile as { full_name?: string; username?: string } | null)?.full_name ??
-    `@${(profile as { username?: string } | null)?.username ?? "artist"}`
+  const recipient = user.full_name ?? `@${user.username ?? "artist"}`
 
   return (
     <div className="container-page py-16">

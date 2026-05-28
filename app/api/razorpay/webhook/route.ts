@@ -2,7 +2,7 @@ import crypto from "node:crypto"
 
 import { NextResponse, type NextRequest } from "next/server"
 
-import { createAdminClient } from "@/lib/supabase/admin"
+import { prisma } from "@/lib/prisma"
 
 export const runtime = "nodejs"
 
@@ -25,8 +25,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Bad JSON" }, { status: 400 })
   }
 
-  const admin = createAdminClient()
-
   try {
     switch (event.event) {
       case "payment.captured":
@@ -40,35 +38,33 @@ export async function POST(request: NextRequest) {
         const paymentRef = payload.payment?.entity?.id ?? payload.order?.entity?.id ?? null
         if (!orderId) break
 
-        await admin
-          .from("orders")
-          .update({
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
             status: "confirmed",
-            paid_at: new Date().toISOString(),
+            paid_at: new Date(),
             payment_provider: "razorpay",
-            payment_ref: paymentRef ?? undefined,
-          })
-          .eq("id", orderId)
-
-        await admin.from("order_tracking_events").insert({
-          order_id: orderId,
-          status: "confirmed",
-          note: "Payment received via Razorpay",
+            payment_ref: paymentRef,
+          },
         })
 
-        const { data: ord } = await admin
-          .from("orders")
-          .select("buyer_id, order_number")
-          .eq("id", orderId)
-          .single()
-        const o = ord as { buyer_id: string; order_number: string } | null
-        if (o) {
-          await admin.from("notifications").insert({
-            user_id: o.buyer_id,
-            kind: "order_update",
-            title: `Order ${o.order_number} confirmed`,
-            body: "Your payment was received and the order is being prepared.",
-            action_url: `/orders/${orderId}`,
+        await prisma.orderTrackingEvent.create({
+          data: { order_id: orderId, status: "confirmed", note: "Payment received via Razorpay" },
+        })
+
+        const ord = await prisma.order.findUnique({
+          where: { id: orderId },
+          select: { buyer_id: true, order_number: true },
+        })
+        if (ord) {
+          await prisma.notification.create({
+            data: {
+              user_id: ord.buyer_id,
+              kind: "order_update",
+              title: `Order ${ord.order_number} confirmed`,
+              body: "Your payment was received and the order is being prepared.",
+              action_url: `/orders/${orderId}`,
+            },
           })
         }
         break
@@ -79,14 +75,13 @@ export async function POST(request: NextRequest) {
         }
         const orderId = payload.payment?.entity?.notes?.order_id
         if (!orderId) break
-        await admin
-          .from("orders")
-          .update({ status: "cancelled" })
-          .eq("id", orderId)
-        await admin.from("order_tracking_events").insert({
-          order_id: orderId,
-          status: "cancelled",
-          note: payload.payment?.entity?.error_description ?? "Razorpay payment failed",
+        await prisma.order.update({ where: { id: orderId }, data: { status: "cancelled" } })
+        await prisma.orderTrackingEvent.create({
+          data: {
+            order_id: orderId,
+            status: "cancelled",
+            note: payload.payment?.entity?.error_description ?? "Razorpay payment failed",
+          },
         })
         break
       }

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useState } from "react"
 import { Heart, Search } from "lucide-react"
 
@@ -8,8 +9,13 @@ import { Button } from "@/components/ui/button"
 import { SmartImage } from "@/components/ui/smart-image"
 
 import { CartIndicator } from "./CartIndicator"
-import { CommandMenu, CommandTrigger } from "./CommandMenu"
+import { CommandTrigger } from "./CommandMenu"
 import { MainNav } from "./MainNav"
+
+const CommandMenu = dynamic(
+  () => import("./CommandMenu").then((m) => ({ default: m.CommandMenu })),
+  { ssr: false },
+)
 import { MobileNav } from "./MobileNav"
 import { ModeToggle } from "./ModeToggle"
 import { NotificationBell } from "./NotificationBell"

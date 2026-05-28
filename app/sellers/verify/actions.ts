@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-import { createClient } from "@/lib/supabase/server"
+import { auth } from "@/lib/auth/config"
+import { prisma } from "@/lib/prisma"
+import { uploadFile } from "@/lib/storage/upload"
 
 type DocKind = "pan" | "aadhaar" | "gst" | "address_proof" | "bank_details" | "other"
 
@@ -12,11 +14,9 @@ const REQUIRED: DocKind[] = ["pan", "aadhaar", "address_proof"]
 type ActionResult = { ok: true } | { ok: false; error: string }
 
 export async function submitVerification(formData: FormData): Promise<ActionResult | void> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: "Not authenticated." }
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: "Not authenticated." }
+  const userId = session.user.id
 
   const businessName = String(formData.get("business_name") ?? "").trim()
   const legalName = String(formData.get("legal_name") ?? "").trim() || null
@@ -38,10 +38,10 @@ export async function submitVerification(formData: FormData): Promise<ActionResu
 
   if (!businessName) return { ok: false, error: "Business name is required." }
 
-  // Upsert seller profile
-  const { error: profileErr } = await supabase.from("seller_profiles").upsert(
-    {
-      id: user.id,
+  await prisma.sellerProfile.upsert({
+    where: { id: userId },
+    create: {
+      id: userId,
       business_name: businessName,
       legal_name: legalName,
       gst_number: gstNumber,
@@ -50,45 +50,40 @@ export async function submitVerification(formData: FormData): Promise<ActionResu
       bank_details: bank,
       is_verified: false,
     },
-    { onConflict: "id" },
-  )
-  if (profileErr) return { ok: false, error: profileErr.message }
+    update: {
+      business_name: businessName,
+      legal_name: legalName,
+      gst_number: gstNumber,
+      pan_number: panNumber,
+      address,
+      bank_details: bank,
+    },
+  })
 
-  // Upload each document file
   const kinds: DocKind[] = ["pan", "aadhaar", "gst", "address_proof", "bank_details"]
-  const uploaded: Array<{ kind: DocKind; storage_path: string }> = []
+  const uploaded: Array<{ kind: DocKind; file_url: string }> = []
 
   for (const kind of kinds) {
     const file = formData.get(`doc_${kind}`) as File | null
     if (!file || !file.size) continue
-    const ext = (file.name.split(".").pop() ?? "pdf").toLowerCase()
-    const path = `${user.id}/verification/${kind}-${Date.now()}.${ext}`
-    const { error: upErr } = await supabase.storage
-      .from("verification")
-      .upload(path, file, { contentType: file.type, upsert: true })
-    if (upErr) return { ok: false, error: `Upload failed (${kind}): ${upErr.message}` }
-    uploaded.push({ kind, storage_path: path })
+    const result = await uploadFile(file, { folder: `verification/${userId}`, publicId: kind, resourceType: "raw" })
+    uploaded.push({ kind, file_url: result.url })
   }
 
   const missingRequired = REQUIRED.filter((k) => !uploaded.find((u) => u.kind === k))
   if (missingRequired.length > 0) {
-    return {
-      ok: false,
-      error: `Missing required documents: ${missingRequired.join(", ")}.`,
-    }
+    return { ok: false, error: `Missing required documents: ${missingRequired.join(", ")}.` }
   }
 
-  // Insert verification doc rows
   if (uploaded.length > 0) {
-    const { error: docsErr } = await supabase.from("seller_verification_docs").insert(
-      uploaded.map((u) => ({
-        seller_id: user.id,
+    await prisma.sellerVerificationDoc.createMany({
+      data: uploaded.map((u) => ({
+        seller_id: userId,
         doc_kind: u.kind,
-        storage_path: u.storage_path,
+        file_url: u.file_url,
         status: "pending",
       })),
-    )
-    if (docsErr) return { ok: false, error: docsErr.message }
+    })
   }
 
   revalidatePath("/seller/dashboard")

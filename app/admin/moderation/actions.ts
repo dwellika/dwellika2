@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 
-import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { auth } from "@/lib/auth/config"
+import { prisma } from "@/lib/prisma"
 
 type Surface = "artworks" | "reels" | "community_posts" | "competition_submissions"
 type Decision = "approved" | "rejected" | "hidden"
@@ -11,6 +11,14 @@ type Decision = "approved" | "rejected" | "hidden"
 type ActionResult = { ok: true } | { ok: false; error: string }
 
 const SURFACES: Surface[] = ["artworks", "reels", "community_posts", "competition_submissions"]
+
+async function requireAdmin() {
+  const session = await auth()
+  if (!session?.user?.id) return null
+  const role = session.user.role as string | undefined
+  if (role !== "admin" && role !== "super_admin") return null
+  return session.user.id
+}
 
 export async function moderate(
   surface: Surface,
@@ -25,35 +33,23 @@ export async function moderate(
       return { ok: false, error: "Notes are required when rejecting or hiding." }
     }
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return { ok: false, error: "Not authenticated." }
-    const { data: p } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle()
-    const role = (p as { role?: string } | null)?.role
-    if (role !== "admin" && role !== "super_admin") {
-      return { ok: false, error: "Admins only." }
-    }
+    const adminId = await requireAdmin()
+    if (!adminId) return { ok: false, error: "Admins only." }
 
-    const admin = createAdminClient()
-    await admin
-      .from(surface)
-      .update({ status: decision })
-      .in("id", ids)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const modelName = { artworks: "artwork", reels: "reel", community_posts: "communityPost", competition_submissions: "competitionSubmission" }[surface]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (prisma as any)[modelName!].updateMany({ where: { id: { in: ids } }, data: { status: decision } })
 
-    const logs = ids.map((id) => ({
-      admin_id: user.id,
-      action: `moderate:${decision}`,
-      target_kind: surface,
-      target_id: id,
-      notes: notes || null,
-    }))
-    await admin.from("moderation_logs").insert(logs)
+    await prisma.moderationLog.createMany({
+      data: ids.map((id) => ({
+        admin_id: adminId,
+        action: `moderate:${decision}`,
+        target_kind: surface,
+        target_id: id,
+        notes: notes || null,
+      })),
+    })
 
     revalidatePath("/admin/moderation")
     return { ok: true }

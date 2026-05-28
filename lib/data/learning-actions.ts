@@ -1,32 +1,22 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
-import { createClient } from "@/lib/supabase/server"
+import { auth } from "@/lib/auth/config"
+import { prisma } from "@/lib/prisma"
 
 type ActionResult = { ok: true } | { ok: false; error: string }
 
 export async function enrollInCourse(courseId: string): Promise<ActionResult | void> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: "Sign in to enroll." }
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: "Sign in to enroll." }
+  const userId = session.user.id
 
-  // Check existing enrollment
-  const { count } = await supabase
-    .from("course_enrollments")
-    .select("*", { count: "exact", head: true })
-    .eq("course_id", courseId)
-    .eq("user_id", user.id)
-
-  if ((count ?? 0) === 0) {
-    const { error } = await supabase
-      .from("course_enrollments")
-      .insert({ course_id: courseId, user_id: user.id })
-    if (error) return { ok: false, error: error.message }
-  }
+  await prisma.courseEnrollment.upsert({
+    where: { course_id_user_id: { course_id: courseId, user_id: userId } },
+    create: { course_id: courseId, user_id: userId },
+    update: {},
+  })
 
   revalidatePath("/courses")
   return { ok: true }
@@ -38,27 +28,26 @@ export async function markLessonComplete(
   watchedSec: number,
 ): Promise<ActionResult> {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return { ok: false, error: "Sign in." }
+    const session = await auth()
+    if (!session?.user?.id) return { ok: false, error: "Sign in." }
 
-    const { error } = await supabase
-      .from("lesson_progress")
-      .upsert(
-        {
-          user_id: user.id,
-          lesson_id: lessonId,
-          course_id: courseId,
-          completed: true,
-          completed_at: new Date().toISOString(),
-          watched_sec: Math.max(0, Math.floor(watchedSec)),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,lesson_id" },
-      )
-    if (error) return { ok: false, error: error.message }
+    await prisma.lessonProgress.upsert({
+      where: { user_id_lesson_id: { user_id: session.user.id, lesson_id: lessonId } },
+      create: {
+        user_id: session.user.id,
+        lesson_id: lessonId,
+        course_id: courseId,
+        completed: true,
+        completed_at: new Date(),
+        watched_sec: Math.max(0, Math.floor(watchedSec)),
+      },
+      update: {
+        completed: true,
+        completed_at: new Date(),
+        watched_sec: Math.max(0, Math.floor(watchedSec)),
+      },
+    })
+
     revalidatePath("/courses")
     return { ok: true }
   } catch (e) {
@@ -67,19 +56,15 @@ export async function markLessonComplete(
 }
 
 export async function registerWorkshop(workshopId: string): Promise<ActionResult | void> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: "Sign in to register." }
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: "Sign in to register." }
 
-  const { error } = await supabase
-    .from("workshop_registrations")
-    .upsert(
-      { workshop_id: workshopId, user_id: user.id },
-      { onConflict: "workshop_id,user_id" },
-    )
-  if (error) return { ok: false, error: error.message }
+  await prisma.workshopRegistration.upsert({
+    where: { workshop_id_user_id: { workshop_id: workshopId, user_id: session.user.id } },
+    create: { workshop_id: workshopId, user_id: session.user.id },
+    update: {},
+  })
+
   revalidatePath("/workshops")
   return { ok: true }
 }

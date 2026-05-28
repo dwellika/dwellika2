@@ -23,6 +23,8 @@ function timeLeft(dateStr: string | null) {
   return `${hours}h left`
 }
 
+export const revalidate = 60
+
 export default async function CompetitionsPage() {
   const all = await listCompetitions({ status: "all", limit: 60 })
 

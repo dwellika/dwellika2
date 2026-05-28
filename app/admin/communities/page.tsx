@@ -2,27 +2,25 @@ import Link from "next/link"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { requireRole } from "@/lib/auth/rbac"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { prisma } from "@/lib/prisma"
 
 export const metadata = { title: "Admin · Communities" }
 
 export default async function AdminCommunitiesPage() {
   await requireRole("admin", "super_admin")
-  const admin = createAdminClient()
-  const { data } = await admin
-    .from("communities")
-    .select("id, slug, name, category, member_count, is_private, created_at")
-    .order("created_at", { ascending: false })
 
-  const rows = (data ?? []) as Array<{
-    id: string
-    slug: string
-    name: string
-    category: string | null
-    member_count: number
-    is_private: boolean
-    created_at: string
-  }>
+  const rows = await prisma.community.findMany({
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      category: true,
+      member_count: true,
+      is_private: true,
+      created_at: true,
+    },
+    orderBy: { created_at: "desc" },
+  })
 
   return (
     <div className="space-y-6">
@@ -46,9 +44,7 @@ export default async function AdminCommunitiesPage() {
             </Link>
           ))}
           {rows.length === 0 ? (
-            <p className="px-4 py-12 text-center text-sm text-muted-foreground">
-              No communities yet.
-            </p>
+            <p className="px-4 py-12 text-center text-sm text-muted-foreground">No communities yet.</p>
           ) : null}
         </CardContent>
       </Card>

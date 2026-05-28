@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireAuth } from "@/lib/auth/rbac"
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 
 import { NewDisputeForm } from "./NewDisputeForm"
 
@@ -17,22 +17,10 @@ export default async function NewDisputePage({ searchParams }: PageProps) {
   if (!orderId) notFound()
 
   const user = await requireAuth()
-  const supabase = await createClient()
-  const { data: order } = await supabase
-    .from("orders")
-    .select("id, order_number, total, currency, status, buyer_id")
-    .eq("id", orderId)
-    .maybeSingle()
-  const o = order as
-    | {
-        id: string
-        order_number: string
-        total: number
-        currency: string
-        status: string
-        buyer_id: string
-      }
-    | null
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, order_number: true, total: true, currency: true, status: true, buyer_id: true },
+  })
   if (!o) notFound()
   if (o.buyer_id !== user.id) redirect("/403")
 

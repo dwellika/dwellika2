@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation"
 
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 
 interface ArtistPageProps {
   params: Promise<{ artistId: string }>
@@ -13,18 +13,13 @@ interface ArtistPageProps {
  */
 export default async function LegacyArtistPage({ params }: ArtistPageProps) {
   const { artistId } = await params
-  const supabase = await createClient()
+  const looksLikeUuid = /^[0-9a-fA-F-]{36}$/.test(artistId)
 
-  const looksLikeUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(artistId)
-  const column = looksLikeUuid ? "id" : "username"
+  const user = await prisma.user.findFirst({
+    where: looksLikeUuid ? { id: artistId } : { username: artistId },
+    select: { username: true },
+  })
 
-  const { data } = await supabase
-    .from("profiles")
-    .select("username")
-    .eq(column, artistId)
-    .maybeSingle()
-
-  const username = (data as { username?: string | null } | null)?.username
-  if (!username) notFound()
-  redirect(`/u/${username}`)
+  if (!user?.username) notFound()
+  redirect(`/u/${user.username}`)
 }

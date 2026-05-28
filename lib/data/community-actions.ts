@@ -1,28 +1,30 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-
-import { createClient } from "@/lib/supabase/server"
+import { auth } from "@/lib/auth/config"
+import { prisma } from "@/lib/prisma"
+import { uploadFile } from "@/lib/storage/upload"
 
 type ActionResult<T = void> = { ok: true; data?: T } | { ok: false; error: string }
 
-async function authedClient() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated.")
-  return { supabase, user }
+async function getSessionUser() {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error("Not authenticated.")
+  return session.user.id
 }
 
 export async function joinCommunity(communityId: string): Promise<ActionResult> {
   try {
-    const { supabase, user } = await authedClient()
-    await supabase
-      .from("community_members")
-      .insert({ community_id: communityId, user_id: user.id })
-    // bump count
-    await supabase.rpc("increment", { x: 1 }).then(() => {}, () => {})
+    const userId = await getSessionUser()
+    await prisma.communityMember.upsert({
+      where: { community_id_user_id: { community_id: communityId, user_id: userId } },
+      create: { community_id: communityId, user_id: userId },
+      update: {},
+    })
+    await prisma.community.update({
+      where: { id: communityId },
+      data: { member_count: { increment: 1 } },
+    }).catch(() => {})
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {
@@ -32,12 +34,14 @@ export async function joinCommunity(communityId: string): Promise<ActionResult> 
 
 export async function leaveCommunity(communityId: string): Promise<ActionResult> {
   try {
-    const { supabase, user } = await authedClient()
-    await supabase
-      .from("community_members")
-      .delete()
-      .eq("community_id", communityId)
-      .eq("user_id", user.id)
+    const userId = await getSessionUser()
+    await prisma.communityMember.delete({
+      where: { community_id_user_id: { community_id: communityId, user_id: userId } },
+    })
+    await prisma.community.update({
+      where: { id: communityId },
+      data: { member_count: { decrement: 1 } },
+    }).catch(() => {})
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {
@@ -47,7 +51,7 @@ export async function leaveCommunity(communityId: string): Promise<ActionResult>
 
 export async function createPost(formData: FormData): Promise<ActionResult> {
   try {
-    const { supabase, user } = await authedClient()
+    const userId = await getSessionUser()
     const communityId = String(formData.get("community_id") ?? "")
     const title = String(formData.get("title") ?? "").trim() || null
     const body = String(formData.get("body") ?? "").trim() || null
@@ -55,41 +59,22 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
     if (!communityId) return { ok: false, error: "Missing community." }
     if (!body && !title) return { ok: false, error: "Write something." }
 
-    // Verify membership
-    const { count } = await supabase
-      .from("community_members")
-      .select("*", { count: "exact", head: true })
-      .eq("community_id", communityId)
-      .eq("user_id", user.id)
-    if (!count) return { ok: false, error: "Join the community before posting." }
+    const isMember = await prisma.communityMember.findUnique({
+      where: { community_id_user_id: { community_id: communityId, user_id: userId } },
+    })
+    if (!isMember) return { ok: false, error: "Join the community before posting." }
 
-    // Upload any media to /artworks bucket (re-using existing public bucket)
     const files = formData.getAll("media") as File[]
     const media: Array<{ url: string; kind: "image" | "video" }> = []
-    let i = 0
+
     for (const f of files) {
       if (!f || !f.size) continue
-      const ext = (f.name.split(".").pop() ?? "jpg").toLowerCase()
-      const path = `${user.id}/community/${Date.now()}-${i}.${ext}`
-      const { error: upErr } = await supabase.storage
-        .from("artworks")
-        .upload(path, f, { contentType: f.type, upsert: false })
-      if (upErr) return { ok: false, error: upErr.message }
-      const { data } = supabase.storage.from("artworks").getPublicUrl(path)
-      media.push({
-        url: data.publicUrl,
-        kind: f.type.startsWith("video/") ? "video" : "image",
-      })
-      i++
+      const result = await uploadFile(f, { folder: `dwellika/community/${communityId}`, resourceType: "auto" })
+      media.push({ url: result.url, kind: f.type.startsWith("video/") ? "video" : "image" })
     }
 
-    await supabase.from("community_posts").insert({
-      community_id: communityId,
-      author_id: user.id,
-      title,
-      body,
-      media,
-      status: "approved", // posts auto-approved; moderators can hide later
+    await prisma.communityPost.create({
+      data: { community_id: communityId, author_id: userId, title, body, media, status: "approved" },
     })
 
     revalidatePath("/communities")
@@ -99,18 +84,12 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
   }
 }
 
-export async function createPostComment(
-  postId: string,
-  body: string,
-): Promise<ActionResult> {
+export async function createPostComment(postId: string, body: string): Promise<ActionResult> {
   try {
     if (!body.trim()) return { ok: false, error: "Comment cannot be empty." }
-    const { supabase, user } = await authedClient()
-    await supabase.from("comments").insert({
-      user_id: user.id,
-      target_kind: "post",
-      target_id: postId,
-      body: body.trim(),
+    const userId = await getSessionUser()
+    await prisma.comment.create({
+      data: { user_id: userId, target_kind: "post", target_id: postId, body: body.trim() },
     })
     revalidatePath("/communities")
     return { ok: true }
@@ -121,29 +100,23 @@ export async function createPostComment(
 
 export async function createPoll(formData: FormData): Promise<ActionResult> {
   try {
-    const { supabase, user } = await authedClient()
+    const userId = await getSessionUser()
     const postId = String(formData.get("post_id") ?? "")
     const question = String(formData.get("question") ?? "").trim()
-    const options = (formData.getAll("option") as string[])
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 6)
+    const options = (formData.getAll("option") as string[]).map((s) => s.trim()).filter(Boolean).slice(0, 6)
 
     if (!postId || !question || options.length < 2) {
       return { ok: false, error: "Need a question and at least 2 options." }
     }
 
-    const { data: poll, error } = await supabase
-      .from("polls")
-      .insert({ post_id: postId, question, created_by: user.id })
-      .select("id")
-      .single()
-    if (error || !poll) return { ok: false, error: error?.message ?? "Failed." }
-    const pollId = (poll as { id: string }).id
-
-    await supabase.from("poll_options").insert(
-      options.map((label, i) => ({ poll_id: pollId, label, position: i })),
-    )
+    await prisma.poll.create({
+      data: {
+        post_id: postId,
+        question,
+        created_by: userId,
+        options: { create: options.map((label, i) => ({ label, position: i })) },
+      },
+    })
 
     revalidatePath("/communities")
     return { ok: true }
@@ -152,18 +125,14 @@ export async function createPoll(formData: FormData): Promise<ActionResult> {
   }
 }
 
-export async function votePoll(
-  pollId: string,
-  optionId: string,
-): Promise<ActionResult> {
+export async function votePoll(pollId: string, optionId: string): Promise<ActionResult> {
   try {
-    const { supabase, user } = await authedClient()
-    await supabase
-      .from("poll_votes")
-      .upsert(
-        { poll_id: pollId, option_id: optionId, user_id: user.id },
-        { onConflict: "poll_id,user_id" },
-      )
+    const userId = await getSessionUser()
+    await prisma.pollVote.upsert({
+      where: { poll_id_user_id: { poll_id: pollId, user_id: userId } },
+      create: { poll_id: pollId, option_id: optionId, user_id: userId },
+      update: { option_id: optionId },
+    })
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {

@@ -3,11 +3,12 @@ const nextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
-  serverExternalPackages: ["@supabase/supabase-js", "@supabase/ssr"],
+  compress: true,
+  poweredByHeader: false,
+  serverExternalPackages: ["bcryptjs"],
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "*.supabase.co" },
-      { protocol: "https", hostname: "*.supabase.in" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "source.unsplash.com" },
       { protocol: "https", hostname: "picsum.photos" },
@@ -16,7 +17,15 @@ const nextConfig = {
     ],
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "framer-motion", "@radix-ui/react-icons"],
+    optimizePackageImports: [
+      "lucide-react",
+      "framer-motion",
+      "@radix-ui/react-icons",
+      "recharts",
+      "date-fns",
+      "@tanstack/react-query",
+      "embla-carousel-react",
+    ],
   },
   async headers() {
     return [

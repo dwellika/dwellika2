@@ -34,7 +34,7 @@ import { listProducts } from "@/lib/data/products"
 import { listReels } from "@/lib/data/reels"
 import { listReviews, reviewSummary } from "@/lib/data/reviews"
 import { getUserBadges } from "@/lib/data/gamification"
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import type { ArtistTier } from "@/lib/types/database"
 
 interface PageProps {
@@ -430,26 +430,15 @@ function ReviewsList({ reviews }: { reviews: Awaited<ReturnType<typeof listRevie
 }
 
 async function FollowersTab({ userId }: { userId: string }) {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from("follows")
-    .select(
-      `follower:profiles!follows_follower_id_fkey ( id, username, full_name, avatar_url )`,
-    )
-    .eq("following_id", userId)
-    .limit(60)
+  const follows = await prisma.follow.findMany({
+    where: { following_id: userId },
+    select: {
+      follower: { select: { id: true, username: true, full_name: true, avatar_url: true } },
+    },
+    take: 60,
+  })
 
-  const followers = (data ?? []).map(
-    (r) =>
-      (r as unknown as {
-        follower: {
-          id: string
-          username: string | null
-          full_name: string | null
-          avatar_url: string | null
-        }
-      }).follower,
-  )
+  const followers = follows.map((f) => f.follower)
 
   if (followers.length === 0) {
     return <Empty label="followers" />

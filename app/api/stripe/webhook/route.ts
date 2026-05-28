@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import type Stripe from "stripe"
 
-import { createAdminClient } from "@/lib/supabase/admin"
+import { prisma } from "@/lib/prisma"
 import { getStripe, isStripeConfigured } from "@/lib/stripe/server"
 
 export const runtime = "nodejs"
@@ -13,10 +13,7 @@ export async function POST(request: NextRequest) {
 
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   if (!secret) {
-    return NextResponse.json(
-      { ok: false, error: "STRIPE_WEBHOOK_SECRET not set" },
-      { status: 500 },
-    )
+    return NextResponse.json({ ok: false, error: "STRIPE_WEBHOOK_SECRET not set" }, { status: 500 })
   }
 
   const stripe = getStripe()
@@ -33,8 +30,6 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const admin = createAdminClient()
-
   try {
     switch (event.type) {
       case "payment_intent.succeeded": {
@@ -42,38 +37,34 @@ export async function POST(request: NextRequest) {
         const orderId = intent.metadata?.order_id
         if (!orderId) break
 
-        await admin
-          .from("orders")
-          .update({
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
             status: "confirmed",
-            paid_at: new Date().toISOString(),
+            paid_at: new Date(),
             payment_provider: "stripe",
             payment_ref: intent.id,
-          })
-          .eq("id", orderId)
-
-        await admin.from("order_tracking_events").insert({
-          order_id: orderId,
-          status: "confirmed",
-          note: "Payment received",
+          },
         })
 
-        // Notify buyer
-        const { data: order } = await admin
-          .from("orders")
-          .select("buyer_id, order_number")
-          .eq("id", orderId)
-          .single()
+        await prisma.orderTrackingEvent.create({
+          data: { order_id: orderId, status: "confirmed", note: "Payment received" },
+        })
 
+        const order = await prisma.order.findUnique({
+          where: { id: orderId },
+          select: { buyer_id: true, order_number: true },
+        })
         if (order) {
-          const o = order as { buyer_id: string; order_number: string }
-          await admin.from("notifications").insert({
-            user_id: o.buyer_id,
-            kind: "order_update",
-            title: `Order ${o.order_number} confirmed`,
-            body: "Your payment was received and the order is being prepared.",
-            action_url: `/orders/${orderId}`,
-            payload: { order_id: orderId },
+          await prisma.notification.create({
+            data: {
+              user_id: order.buyer_id,
+              kind: "order_update",
+              title: `Order ${order.order_number} confirmed`,
+              body: "Your payment was received and the order is being prepared.",
+              action_url: `/orders/${orderId}`,
+              payload: { order_id: orderId },
+            },
           })
         }
         break
@@ -82,14 +73,13 @@ export async function POST(request: NextRequest) {
         const intent = event.data.object as Stripe.PaymentIntent
         const orderId = intent.metadata?.order_id
         if (!orderId) break
-        await admin
-          .from("orders")
-          .update({ status: "cancelled" })
-          .eq("id", orderId)
-        await admin.from("order_tracking_events").insert({
-          order_id: orderId,
-          status: "cancelled",
-          note: intent.last_payment_error?.message ?? "Payment failed",
+        await prisma.order.update({ where: { id: orderId }, data: { status: "cancelled" } })
+        await prisma.orderTrackingEvent.create({
+          data: {
+            order_id: orderId,
+            status: "cancelled",
+            note: intent.last_payment_error?.message ?? "Payment failed",
+          },
         })
         break
       }

@@ -8,12 +8,11 @@ import {
 } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { prisma } from "@/lib/prisma"
 
 export const metadata = { title: "Admin overview" }
 
 async function counts() {
-  const admin = createAdminClient()
   const [
     pendingArtworks,
     pendingReels,
@@ -25,30 +24,25 @@ async function counts() {
     totalOrders,
     last24Orders,
   ] = await Promise.all([
-    admin.from("artworks").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    admin.from("reels").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    admin.from("community_posts").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    admin.from("competition_submissions").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    admin.from("disputes").select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
-    admin.from("seller_verification_docs").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    admin.from("profiles").select("*", { count: "exact", head: true }),
-    admin.from("orders").select("*", { count: "exact", head: true }),
-    admin
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+    prisma.artwork.count({ where: { status: "pending" } }),
+    prisma.reel.count({ where: { status: "pending" } }),
+    prisma.communityPost.count({ where: { status: "pending" } }),
+    prisma.competitionSubmission.count({ where: { status: "pending" } }),
+    prisma.dispute.count({ where: { status: { in: ["open", "reviewing"] } } }),
+    prisma.sellerVerificationDoc.count({ where: { status: "pending" } }),
+    prisma.user.count(),
+    prisma.order.count(),
+    prisma.order.count({
+      where: { created_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+    }),
   ])
   return {
-    pendingModeration:
-      (pendingArtworks.count ?? 0) +
-      (pendingReels.count ?? 0) +
-      (pendingPosts.count ?? 0) +
-      (pendingSubs.count ?? 0),
-    openDisputes: openDisputes.count ?? 0,
-    pendingSellers: pendingSellers.count ?? 0,
-    totalUsers: totalUsers.count ?? 0,
-    totalOrders: totalOrders.count ?? 0,
-    last24Orders: last24Orders.count ?? 0,
+    pendingModeration: pendingArtworks + pendingReels + pendingPosts + pendingSubs,
+    openDisputes,
+    pendingSellers,
+    totalUsers,
+    totalOrders,
+    last24Orders,
   }
 }
 
@@ -65,58 +59,18 @@ export default async function AdminOverview() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Tile
-          href="/admin/moderation"
-          label="Pending moderation"
-          value={c.pendingModeration}
-          Icon={ShieldCheck}
-        />
-        <Tile
-          href="/admin/disputes"
-          label="Open disputes"
-          value={c.openDisputes}
-          Icon={ShieldAlert}
-        />
-        <Tile
-          href="/admin/sellers"
-          label="Seller verifications"
-          value={c.pendingSellers}
-          Icon={ShoppingBag}
-        />
-        <Tile
-          href="/admin/users"
-          label="Total users"
-          value={c.totalUsers}
-          Icon={Users}
-        />
-        <Tile
-          href="/admin/orders"
-          label="Total orders"
-          value={c.totalOrders}
-          Icon={ShoppingBag}
-        />
-        <Tile
-          href="/admin/orders"
-          label="Orders (24h)"
-          value={c.last24Orders}
-          Icon={ShoppingBag}
-        />
+        <Tile href="/admin/moderation" label="Pending moderation" value={c.pendingModeration} Icon={ShieldCheck} />
+        <Tile href="/admin/disputes" label="Open disputes" value={c.openDisputes} Icon={ShieldAlert} />
+        <Tile href="/admin/sellers" label="Seller verifications" value={c.pendingSellers} Icon={ShoppingBag} />
+        <Tile href="/admin/users" label="Total users" value={c.totalUsers} Icon={Users} />
+        <Tile href="/admin/orders" label="Total orders" value={c.totalOrders} Icon={ShoppingBag} />
+        <Tile href="/admin/orders" label="Orders (24h)" value={c.last24Orders} Icon={ShoppingBag} />
       </div>
     </div>
   )
 }
 
-function Tile({
-  href,
-  label,
-  value,
-  Icon,
-}: {
-  href: string
-  label: string
-  value: number
-  Icon: React.ElementType
-}) {
+function Tile({ href, label, value, Icon }: { href: string; label: string; value: number; Icon: React.ElementType }) {
   return (
     <Link href={href}>
       <Card className="group transition-all hover:border-primary/40">

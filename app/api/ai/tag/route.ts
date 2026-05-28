@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { getOpenAI, VISION_MODEL, isOpenAIConfigured } from "@/lib/ai/openai"
-import { createClient } from "@/lib/supabase/server"
+import { auth } from "@/lib/auth/config"
 
 export const runtime = "nodejs"
 
@@ -18,21 +18,15 @@ Return ONLY the JSON object, no prose, no markdown.`
 export async function POST(request: NextRequest) {
   try {
     if (!isOpenAIConfigured()) {
-      return NextResponse.json(
-        { ok: false, error: "OPENAI_API_KEY missing" },
-        { status: 503 },
-      )
+      return NextResponse.json({ ok: false, error: "OPENAI_API_KEY missing" }, { status: 503 })
     }
     const { imageUrl } = (await request.json()) as { imageUrl?: string }
     if (!imageUrl) {
       return NextResponse.json({ ok: false, error: "Missing imageUrl" }, { status: 400 })
     }
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
+    const session = await auth()
+    if (!session?.user?.id) {
       return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 })
     }
 
@@ -61,10 +55,7 @@ export async function POST(request: NextRequest) {
     try {
       parsed = JSON.parse(content)
     } catch {
-      return NextResponse.json(
-        { ok: false, error: "AI returned non-JSON" },
-        { status: 502 },
-      )
+      return NextResponse.json({ ok: false, error: "AI returned non-JSON" }, { status: 502 })
     }
 
     return NextResponse.json({ ok: true, tags: parsed })

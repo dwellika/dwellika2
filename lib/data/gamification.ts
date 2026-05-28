@@ -1,6 +1,6 @@
 import "server-only"
 
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import type { UserLevel } from "@/lib/types/database"
 
 export interface UserLevelRow {
@@ -20,7 +20,7 @@ export interface LevelProgress {
   level: UserLevel
   xp: number
   next: UserLevel | null
-  progress: number // 0..1
+  progress: number
   xpToNext: number | null
 }
 
@@ -35,24 +35,19 @@ export function levelProgress(level: UserLevel, xp: number): LevelProgress {
   return { level, xp, next, progress, xpToNext }
 }
 
-export async function getMyLevel(userId: string): Promise<UserLevelRow | null> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from("user_levels")
-    .select("user_id, level, xp")
-    .eq("user_id", userId)
-    .maybeSingle()
-  return (data as UserLevelRow | null) ?? { user_id: userId, level: "explorer", xp: 0 }
+export async function getMyLevel(userId: string): Promise<UserLevelRow> {
+  const row = await prisma.userXp.findUnique({ where: { user_id: userId } })
+  return row
+    ? { user_id: row.user_id, level: row.level as UserLevel, xp: row.xp }
+    : { user_id: userId, level: "explorer", xp: 0 }
 }
 
 export async function getUserBadges(userId: string) {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from("user_badges")
-    .select(`badge:badges(slug, name, description, icon_url, tier), awarded_at`)
-    .eq("user_id", userId)
-  return (data ?? []) as unknown as Array<{
-    badge: { slug: string; name: string; description: string | null; icon_url: string | null; tier: string | null } | null
-    awarded_at: string
-  }>
+  return prisma.userBadge.findMany({
+    where: { user_id: userId },
+    include: {
+      badge: { select: { slug: true, name: true, description: true, icon_url: true, tier: true } },
+    },
+    orderBy: { awarded_at: "desc" },
+  })
 }

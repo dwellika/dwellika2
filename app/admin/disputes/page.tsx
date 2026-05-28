@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { requireRole } from "@/lib/auth/rbac"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { prisma } from "@/lib/prisma"
 
 import { ResolveControls } from "./ResolveControls"
 
@@ -19,32 +19,21 @@ const TONE: Record<string, string> = {
 
 export default async function AdminDisputesPage() {
   await requireRole("admin", "super_admin")
-  const admin = createAdminClient()
 
-  const { data } = await admin
-    .from("disputes")
-    .select(
-      `
-        id, order_id, reason, description, status, created_at,
-        opener:profiles!disputes_opened_by_fkey ( username, full_name, avatar_url ),
-        against:profiles!disputes_against_id_fkey ( username, full_name, avatar_url ),
-        order:orders!disputes_order_id_fkey ( order_number, total, currency )
-      `,
-    )
-    .order("created_at", { ascending: false })
-
-  const rows =
-    (data ?? []) as unknown as Array<{
-      id: string
-      order_id: string
-      reason: string
-      description: string | null
-      status: string
-      created_at: string
-      opener: { username: string | null; full_name: string | null; avatar_url: string | null } | null
-      against: { username: string | null; full_name: string | null; avatar_url: string | null } | null
-      order: { order_number: string; total: number; currency: string } | null
-    }>
+  const rows = await prisma.dispute.findMany({
+    select: {
+      id: true,
+      order_id: true,
+      reason: true,
+      description: true,
+      status: true,
+      created_at: true,
+      opener: { select: { username: true, full_name: true, avatar_url: true } },
+      target: { select: { username: true, full_name: true, avatar_url: true } },
+      order: { select: { order_number: true, total: true, currency: true } },
+    },
+    orderBy: { created_at: "desc" },
+  })
 
   return (
     <div className="space-y-6">
@@ -56,9 +45,7 @@ export default async function AdminDisputesPage() {
       <Card>
         <CardContent className="divide-y divide-border p-0">
           {rows.length === 0 ? (
-            <p className="px-4 py-12 text-center text-sm text-muted-foreground">
-              No disputes currently.
-            </p>
+            <p className="px-4 py-12 text-center text-sm text-muted-foreground">No disputes currently.</p>
           ) : null}
           {rows.map((d) => (
             <div key={d.id} className="grid gap-3 p-4 md:grid-cols-[1fr_140px_220px]">
@@ -78,15 +65,15 @@ export default async function AdminDisputesPage() {
                   vs
                   <span className="inline-flex items-center gap-1">
                     <Avatar className="size-5">
-                      <AvatarImage src={d.against?.avatar_url ?? undefined} />
-                      <AvatarFallback>{(d.against?.full_name ?? "?").slice(0, 2)}</AvatarFallback>
+                      <AvatarImage src={d.target?.avatar_url ?? undefined} />
+                      <AvatarFallback>{(d.target?.full_name ?? "?").slice(0, 2)}</AvatarFallback>
                     </Avatar>
-                    @{d.against?.username}
+                    @{d.target?.username}
                   </span>
                   · {d.order?.order_number}
                 </div>
               </div>
-              <Badge className={`h-fit capitalize ${TONE[d.status]}`}>{d.status}</Badge>
+              <Badge className={`h-fit capitalize ${TONE[String(d.status)] ?? ""}`}>{String(d.status)}</Badge>
               {d.status !== "resolved" && d.status !== "rejected" ? (
                 <ResolveControls disputeId={d.id} />
               ) : null}

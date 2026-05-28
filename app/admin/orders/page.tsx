@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { requireRole } from "@/lib/auth/rbac"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { prisma } from "@/lib/prisma"
 
 export const metadata = { title: "Admin · Orders" }
 
@@ -19,26 +19,20 @@ const TONE: Record<string, string> = {
 
 export default async function AdminOrdersPage() {
   await requireRole("admin", "super_admin")
-  const admin = createAdminClient()
 
-  const { data } = await admin
-    .from("orders")
-    .select(
-      `id, order_number, status, total, currency, created_at, buyer:profiles!orders_buyer_id_fkey(username, full_name)`,
-    )
-    .order("created_at", { ascending: false })
-    .limit(80)
-
-  const rows =
-    (data ?? []) as unknown as Array<{
-      id: string
-      order_number: string
-      status: string
-      total: number
-      currency: string
-      created_at: string
-      buyer: { username: string | null; full_name: string | null } | null
-    }>
+  const rows = await prisma.order.findMany({
+    select: {
+      id: true,
+      order_number: true,
+      status: true,
+      total: true,
+      currency: true,
+      created_at: true,
+      buyer: { select: { username: true, full_name: true } },
+    },
+    orderBy: { created_at: "desc" },
+    take: 80,
+  })
 
   return (
     <div className="space-y-6">
@@ -64,7 +58,7 @@ export default async function AdminOrdersPage() {
               <p className="text-xs text-muted-foreground">
                 {new Date(o.created_at).toLocaleString()}
               </p>
-              <Badge className={`w-fit capitalize ${TONE[o.status]}`}>{o.status}</Badge>
+              <Badge className={`w-fit capitalize ${TONE[o.status] ?? ""}`}>{o.status}</Badge>
               <p className="font-display text-base tabular-nums">
                 {o.currency} {Number(o.total).toLocaleString()}
               </p>

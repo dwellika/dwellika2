@@ -6,7 +6,6 @@ import { Paperclip, Send } from "lucide-react"
 import { toast } from "sonner"
 
 import { markChatRead, sendMessage } from "@/lib/data/chat-actions"
-import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SmartImage } from "@/components/ui/smart-image"
@@ -38,69 +37,44 @@ export function ChatThread({
   const [body, setBody] = useState("")
   const [attachments, setAttachments] = useState<File[]>([])
   const [pending, startTransition] = useTransition()
-  const [typing, setTyping] = useState<string[]>([])
-  const [online, setOnline] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
-  const supabase = useRef(createClient())
+  const lastIdRef = useRef(initialMessages[initialMessages.length - 1]?.id ?? "")
 
-  // Auto-scroll to bottom on mount and when messages change
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [messages.length])
 
-  // Mark read on mount
   useEffect(() => {
     markChatRead(chatId).then(() => {}, () => {})
   }, [chatId])
 
-  // Realtime subscription for new messages + presence
+  // Poll for new messages every 3 seconds
   useEffect(() => {
-    const channel = supabase.current
-      .channel(`chat:${chatId}`, { config: { presence: { key: currentUserId } } })
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `chat_id=eq.${chatId}`,
-        },
-        (payload) => {
-          const m = payload.new as ChatMessageRow
-          setMessages((prev) => (prev.some((p) => p.id === m.id) ? prev : [...prev, m]))
-          if (m.sender_id !== currentUserId) {
+    const poll = async () => {
+      try {
+        const params = new URLSearchParams({ after: lastIdRef.current })
+        const res = await fetch(`/api/chat/${chatId}/messages?${params}`)
+        if (!res.ok) return
+        const data = (await res.json()) as { messages: ChatMessageRow[] }
+        if (data.messages.length > 0) {
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id))
+            const newMsgs = data.messages.filter((m) => !existingIds.has(m.id))
+            if (newMsgs.length === 0) return prev
+            const last = newMsgs[newMsgs.length - 1]
+            if (last) lastIdRef.current = last.id
             markChatRead(chatId).then(() => {}, () => {})
-          }
-        },
-      )
-      .on("broadcast", { event: "typing" }, (payload) => {
-        const fromId = (payload.payload as { userId?: string })?.userId
-        if (!fromId || fromId === currentUserId) return
-        setTyping((prev) => (prev.includes(fromId) ? prev : [...prev, fromId]))
-        window.setTimeout(() => {
-          setTyping((prev) => prev.filter((id) => id !== fromId))
-        }, 3000)
-      })
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState() as Record<string, unknown>
-        setOnline(new Set(Object.keys(state)))
-      })
-
-    channel.subscribe(async (status) => {
-      if (status === "SUBSCRIBED") {
-        await channel.track({ user_id: currentUserId, at: Date.now() })
+            return [...prev, ...newMsgs]
+          })
+        }
+      } catch {
+        // network error — retry next tick
       }
-    })
-
-    return () => {
-      channel.unsubscribe()
     }
-  }, [chatId, currentUserId])
 
-  const broadcastTyping = () => {
-    const ch = supabase.current.channel(`chat:${chatId}`)
-    ch.send({ type: "broadcast", event: "typing", payload: { userId: currentUserId } })
-  }
+    const interval = setInterval(poll, 3000)
+    return () => clearInterval(interval)
+  }, [chatId])
 
   const submit = (formData: FormData) => {
     startTransition(async () => {
@@ -118,19 +92,12 @@ export function ChatThread({
   }
 
   const otherParticipants = participants.filter((p) => p.id !== currentUserId)
-  const typingNames = typing
-    .map((id) => participants.find((p) => p.id === id)?.full_name)
-    .filter(Boolean)
-    .join(", ")
 
   return (
     <div className="flex h-[calc(100vh-12rem)] flex-col">
-      {/* Online indicator */}
       {otherParticipants.length > 0 ? (
         <div className="border-b border-border bg-muted/20 px-4 py-1 text-xs text-muted-foreground">
-          {otherParticipants
-            .map((p) => `${p.full_name ?? `@${p.username}`} ${online.has(p.id) ? "· online" : ""}`)
-            .join(" · ")}
+          {otherParticipants.map((p) => `${p.full_name ?? `@${p.username}`}`).join(" · ")}
         </div>
       ) : null}
 
@@ -162,7 +129,7 @@ export function ChatThread({
                   )}
                 >
                   {m.body ? <p className="whitespace-pre-line">{m.body}</p> : null}
-                  {m.attachments?.map((a, i) => (
+                  {(m.attachments as Array<{ url: string; name: string; kind: string }>)?.map((a, i) => (
                     <div key={i} className="mt-2">
                       {a.kind === "image" ? (
                         <SmartImage
@@ -178,11 +145,7 @@ export function ChatThread({
                         // eslint-disable-next-line jsx-a11y/media-has-caption
                         <audio src={a.url} controls className="w-full" />
                       ) : (
-                        <Link
-                          href={a.url}
-                          target="_blank"
-                          className="inline-flex items-center gap-2 underline"
-                        >
+                        <Link href={a.url} target="_blank" className="inline-flex items-center gap-2 underline">
                           <Paperclip className="size-3.5" /> {a.name}
                         </Link>
                       )}
@@ -196,22 +159,13 @@ export function ChatThread({
             )
           })
         )}
-        {typingNames ? (
-          <p className="px-2 text-xs italic text-muted-foreground">{typingNames} is typing…</p>
-        ) : null}
       </div>
 
-      <form
-        action={submit}
-        className="border-t border-border p-3"
-      >
+      <form action={submit} className="border-t border-border p-3">
         {attachments.length > 0 ? (
           <div className="mb-2 flex flex-wrap gap-2">
             {attachments.map((f, i) => (
-              <div
-                key={`${f.name}-${i}`}
-                className="rounded-full bg-muted px-3 py-1 text-xs"
-              >
+              <div key={`${f.name}-${i}`} className="rounded-full bg-muted px-3 py-1 text-xs">
                 {f.name}
                 <button
                   type="button"
@@ -242,10 +196,7 @@ export function ChatThread({
 
           <Textarea
             value={body}
-            onChange={(e) => {
-              setBody(e.target.value)
-              broadcastTyping()
-            }}
+            onChange={(e) => setBody(e.target.value)}
             placeholder="Write a message…"
             rows={1}
             className="min-h-[40px] flex-1 resize-none"

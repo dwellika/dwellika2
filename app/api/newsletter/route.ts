@@ -1,22 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server"
-
-import { createClient } from "@/lib/supabase/server"
+import { z } from "zod"
+import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
-    if (!email || typeof email !== "string") {
-      return NextResponse.json({ ok: false, error: "Email is required." }, { status: 400 })
+    const body = await request.json()
+    const parsed = z.object({ email: z.string().email() }).safeParse(body)
+
+    if (!parsed.success) {
+      return NextResponse.json({ ok: false, error: "Valid email is required." }, { status: 400 })
     }
 
-    const supabase = await createClient()
-    const { error } = await supabase
-      .from("newsletter_subscribers")
-      .insert({ email, source: "footer" })
-
-    if (error && error.code !== "23505") {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-    }
+    await prisma.newsletterSubscriber.upsert({
+      where: { email: parsed.data.email },
+      create: { email: parsed.data.email, source: "footer" },
+      update: { is_active: true },
+    })
 
     return NextResponse.json({ ok: true })
   } catch (e) {

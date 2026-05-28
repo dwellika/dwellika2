@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
-import { createClient } from "@/lib/supabase/server"
+import { auth } from "@/lib/auth/config"
+import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
@@ -10,31 +11,25 @@ import { ProfileForm } from "./ProfileForm"
 export const metadata = { title: "Profile — Settings" }
 
 export default async function ProfileSettingsPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect("/signin?next=/settings/profile")
+  const session = await auth()
+  if (!session?.user?.id) redirect("/signin?next=/settings/profile")
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "username, full_name, avatar_url, cover_url, bio, website, location, interests, socials",
-    )
-    .eq("id", user.id)
-    .single<{
-      username: string | null
-      full_name: string | null
-      avatar_url: string | null
-      cover_url: string | null
-      bio: string | null
-      website: string | null
-      location: string | null
-      interests: string[]
-      socials: Record<string, string>
-    }>()
+  const profile = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      username: true,
+      full_name: true,
+      avatar_url: true,
+      cover_url: true,
+      bio: true,
+      website: true,
+      location: true,
+      interests: true,
+      socials: true,
+    },
+  })
 
-  const socials = profile?.socials ?? {}
+  const socials = (profile?.socials as Record<string, string> | null) ?? {}
 
   const initial = {
     username: profile?.username ?? "",
@@ -56,7 +51,7 @@ export default async function ProfileSettingsPage() {
       .join("")
       .slice(0, 2)
       .toUpperCase() ||
-    (profile?.username ?? user.email ?? "DW").slice(0, 2).toUpperCase()
+    (profile?.username ?? session.user.email ?? "DW").slice(0, 2).toUpperCase()
 
   return (
     <div className="space-y-8">

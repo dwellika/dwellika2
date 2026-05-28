@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { requireRole } from "@/lib/auth/rbac"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { prisma } from "@/lib/prisma"
 
 import { UserRoleControls } from "./UserRoleControls"
 
@@ -17,26 +17,29 @@ interface PageProps {
 export default async function AdminUsersPage({ searchParams }: PageProps) {
   const viewer = await requireRole("admin", "super_admin")
   const { q } = await searchParams
-  const admin = createAdminClient()
 
-  let query = admin
-    .from("profiles")
-    .select("id, username, full_name, avatar_url, role, is_verified, created_at, location")
-    .order("created_at", { ascending: false })
-    .limit(60)
-  if (q) query = query.or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
-
-  const { data } = await query
-  const rows = (data ?? []) as Array<{
-    id: string
-    username: string | null
-    full_name: string | null
-    avatar_url: string | null
-    role: string
-    is_verified: boolean
-    created_at: string
-    location: string | null
-  }>
+  const rows = await prisma.user.findMany({
+    where: q
+      ? {
+          OR: [
+            { username: { contains: q, mode: "insensitive" } },
+            { full_name: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : undefined,
+    select: {
+      id: true,
+      username: true,
+      full_name: true,
+      avatar_url: true,
+      role: true,
+      is_verified: true,
+      created_at: true,
+      location: true,
+    },
+    orderBy: { created_at: "desc" },
+    take: 60,
+  })
 
   return (
     <div className="space-y-6">

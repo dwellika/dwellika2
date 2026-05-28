@@ -5,77 +5,55 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SmartImage } from "@/components/ui/smart-image"
 import { requireAuth } from "@/lib/auth/rbac"
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 
 export const metadata = { title: "Saved" }
 
-interface SaveRow {
-  id: string
-  target_kind: "artwork" | "reel" | "post" | "product" | "comment"
-  target_id: string
-  created_at: string
-}
-
 export default async function WishlistPage() {
   const user = await requireAuth()
-  const supabase = await createClient()
 
-  const { data: saves } = await supabase
-    .from("saves")
-    .select("id, target_kind, target_id, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+  const saves = await prisma.save.findMany({
+    where: { user_id: user.id },
+    select: { id: true, target_kind: true, target_id: true, created_at: true },
+    orderBy: { created_at: "desc" },
+  })
 
-  const rows = (saves ?? []) as SaveRow[]
-  const artworkIds = rows.filter((r) => r.target_kind === "artwork").map((r) => r.target_id)
-  const productIds = rows.filter((r) => r.target_kind === "product").map((r) => r.target_id)
+  const artworkIds = saves.filter((r) => r.target_kind === "artwork").map((r) => r.target_id)
+  const productIds = saves.filter((r) => r.target_kind === "product").map((r) => r.target_id)
 
-  const [artworksRes, productsRes] = await Promise.all([
+  const [artworks, products] = await Promise.all([
     artworkIds.length
-      ? supabase
-          .from("artworks")
-          .select(
-            `id, title, slug, price, currency, for_sale,
-             artwork_media ( url, is_primary ),
-             artist:profiles!artworks_artist_id_fkey ( username, full_name )`,
-          )
-          .in("id", artworkIds)
-      : Promise.resolve({ data: [] }),
+      ? prisma.artwork.findMany({
+          where: { id: { in: artworkIds } },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            price: true,
+            currency: true,
+            for_sale: true,
+            artwork_media: { select: { url: true, is_primary: true } },
+            artist: { select: { username: true, full_name: true } },
+          },
+        })
+      : [],
     productIds.length
-      ? supabase
-          .from("products")
-          .select(
-            `id, title, slug, price, currency,
-             product_media ( url, is_primary ),
-             seller:profiles!products_seller_id_fkey ( username, full_name )`,
-          )
-          .in("id", productIds)
-      : Promise.resolve({ data: [] }),
+      ? prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            price: true,
+            currency: true,
+            product_media: { select: { url: true, is_primary: true } },
+            seller: { select: { username: true, full_name: true } },
+          },
+        })
+      : [],
   ])
 
-  const artworks =
-    (artworksRes.data ?? []) as unknown as Array<{
-      id: string
-      title: string
-      slug: string
-      price: number | null
-      currency: string
-      for_sale: boolean
-      artwork_media: Array<{ url: string; is_primary: boolean }>
-      artist: { username: string | null; full_name: string | null } | null
-    }>
-  const products =
-    (productsRes.data ?? []) as unknown as Array<{
-      id: string
-      title: string
-      slug: string
-      price: number
-      currency: string
-      product_media: Array<{ url: string; is_primary: boolean }>
-      seller: { username: string | null; full_name: string | null } | null
-    }>
-
-  if (rows.length === 0) {
+  if (saves.length === 0) {
     return (
       <div className="container-page py-20 text-center">
         <Bookmark className="mx-auto size-12 text-muted-foreground" />

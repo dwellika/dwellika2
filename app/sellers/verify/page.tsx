@@ -3,7 +3,7 @@ import { Shield } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireAuth } from "@/lib/auth/rbac"
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 
 import { VerifyForm } from "./VerifyForm"
 
@@ -11,44 +11,46 @@ export const metadata = { title: "Seller verification" }
 
 export default async function VerifyPage() {
   const user = await requireAuth()
-  const supabase = await createClient()
 
-  const { data: profile } = await supabase
-    .from("seller_profiles")
-    .select("business_name, legal_name, gst_number, pan_number, is_verified, address, bank_details")
-    .eq("id", user.id)
-    .maybeSingle()
+  const [sellerProfile, docs] = await Promise.all([
+    prisma.sellerProfile.findUnique({
+      where: { id: user.id },
+      select: {
+        business_name: true,
+        legal_name: true,
+        gst_number: true,
+        pan_number: true,
+        is_verified: true,
+        address: true,
+        bank_details: true,
+      },
+    }),
+    prisma.sellerVerificationDoc.findMany({
+      where: { seller_id: user.id },
+      select: { id: true, doc_kind: true, status: true, notes: true, created_at: true, reviewed_at: true },
+      orderBy: { created_at: "desc" },
+    }),
+  ])
 
-  const { data: docs } = await supabase
-    .from("seller_verification_docs")
-    .select("id, doc_kind, status, notes, created_at, reviewed_at")
-    .eq("seller_id", user.id)
-    .order("created_at", { ascending: false })
+  const sp = sellerProfile as {
+    business_name: string
+    legal_name: string | null
+    gst_number: string | null
+    pan_number: string | null
+    is_verified: boolean
+    address: Record<string, string | null> | null
+    bank_details: Record<string, string | null> | null
+  } | null
 
-  const sellerProfile = profile as
-    | {
-        business_name: string
-        legal_name: string | null
-        gst_number: string | null
-        pan_number: string | null
-        is_verified: boolean
-        address: Record<string, string | null> | null
-        bank_details: Record<string, string | null> | null
-      }
-    | null
-  const verificationDocs =
-    (docs ?? []) as Array<{
-      id: string
-      doc_kind: string
-      status: string
-      notes: string | null
-      created_at: string
-      reviewed_at: string | null
-    }>
-
-  if (sellerProfile?.is_verified) {
+  if (sp?.is_verified) {
     redirect("/seller/dashboard?verified=1")
   }
+
+  const verificationDocs = docs.map((d) => ({
+    ...d,
+    created_at: d.created_at.toISOString(),
+    reviewed_at: d.reviewed_at?.toISOString() ?? null,
+  }))
 
   const latestByKind = new Map<string, (typeof verificationDocs)[number]>()
   for (const d of verificationDocs) {
@@ -78,22 +80,22 @@ export default async function VerifyPage() {
           <CardContent>
             <VerifyForm
               defaults={{
-                business_name: sellerProfile?.business_name ?? "",
-                legal_name: sellerProfile?.legal_name ?? "",
-                gst_number: sellerProfile?.gst_number ?? "",
-                pan_number: sellerProfile?.pan_number ?? "",
+                business_name: sp?.business_name ?? "",
+                legal_name: sp?.legal_name ?? "",
+                gst_number: sp?.gst_number ?? "",
+                pan_number: sp?.pan_number ?? "",
                 address: {
-                  line1: String(sellerProfile?.address?.line1 ?? ""),
-                  line2: String(sellerProfile?.address?.line2 ?? ""),
-                  city: String(sellerProfile?.address?.city ?? ""),
-                  state: String(sellerProfile?.address?.state ?? ""),
-                  postal_code: String(sellerProfile?.address?.postal_code ?? ""),
-                  country: String(sellerProfile?.address?.country ?? "IN"),
+                  line1: String(sp?.address?.line1 ?? ""),
+                  line2: String(sp?.address?.line2 ?? ""),
+                  city: String(sp?.address?.city ?? ""),
+                  state: String(sp?.address?.state ?? ""),
+                  postal_code: String(sp?.address?.postal_code ?? ""),
+                  country: String(sp?.address?.country ?? "IN"),
                 },
                 bank: {
-                  account_holder: String(sellerProfile?.bank_details?.account_holder ?? ""),
-                  account_number: String(sellerProfile?.bank_details?.account_number ?? ""),
-                  ifsc: String(sellerProfile?.bank_details?.ifsc ?? ""),
+                  account_holder: String(sp?.bank_details?.account_holder ?? ""),
+                  account_number: String(sp?.bank_details?.account_number ?? ""),
+                  ifsc: String(sp?.bank_details?.ifsc ?? ""),
                 },
               }}
               docsState={Array.from(latestByKind.values())}
@@ -113,8 +115,7 @@ export default async function VerifyPage() {
               placement in shop, and full marketplace tooling.
             </p>
             <p>
-              Documents are stored in a private Supabase bucket with row-level
-              security — only the Dwellika team and you can read them.
+              Documents are stored securely and only visible to the Dwellika team.
             </p>
             <p>
               Review takes 1-3 business days. We&apos;ll notify you here and via

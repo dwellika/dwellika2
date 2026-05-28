@@ -4,9 +4,8 @@ import Link from "next/link"
 import { LogOut, MessageSquare, Settings, ShieldAlert, ShoppingBag, Heart, User2 } from "lucide-react"
 import { useEffect, useState, useTransition } from "react"
 
-import { signOut } from "@/app/(auth)/actions"
+import { signOutAction as signOut } from "@/app/(auth)/actions"
 import { useUser } from "@/lib/auth/use-user"
-import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,15 +26,12 @@ export function UserMenu() {
 
   useEffect(() => {
     if (!user) return
-    const supabase = createClient()
-    supabase
-      .from("user_levels")
-      .select("level, xp")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        setLevel((data as { level: UserLevel; xp: number } | null) ?? { level: "explorer", xp: 0 })
+    fetch(`/api/user/${user.id}/level`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { level: UserLevel; xp: number } | null) => {
+        if (data) setLevel(data)
       })
+      .catch(() => {})
   }, [user])
 
   if (loading) {

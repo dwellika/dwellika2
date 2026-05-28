@@ -1,7 +1,26 @@
 import Link from "next/link"
+import dynamic from "next/dynamic"
 
-import { ACCENT_COLORS, BarSeriesChart, CategoryPie, LineSeriesChart } from "@/components/charts/Charts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+const LineSeriesChart = dynamic(() =>
+  import("@/components/charts/Charts").then((m) => ({ default: m.LineSeriesChart })),
+)
+const BarSeriesChart = dynamic(() =>
+  import("@/components/charts/Charts").then((m) => ({ default: m.BarSeriesChart })),
+)
+const CategoryPie = dynamic(() =>
+  import("@/components/charts/Charts").then((m) => ({ default: m.CategoryPie })),
+)
+
+const ACCENT_COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--accent))",
+  "hsl(var(--secondary))",
+  "hsl(var(--tertiary))",
+  "hsl(var(--destructive))",
+  "hsl(var(--muted-foreground))",
+]
 import { requireRole } from "@/lib/auth/rbac"
 import { platformAnalytics } from "@/lib/data/analytics"
 

@@ -1,8 +1,7 @@
 import "server-only"
 
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import type { ProductCategory } from "@/lib/types/database"
-import type { ProductWithMedia } from "./types"
 
 export interface ProductListParams {
   q?: string
@@ -31,95 +30,66 @@ export async function listProducts({
   limit = 24,
   offset = 0,
 }: ProductListParams = {}) {
-  const supabase = await createClient()
-
-  let query = supabase
-    .from("products")
-    .select(
-      `
-        id, seller_id, category, title, slug, description, price, currency,
-        inventory, sku, tags, attributes, status, rating_avg, rating_count,
-        created_at, updated_at,
-        product_media ( id, product_id, kind, url, thumbnail_url, position, is_primary ),
-        seller:profiles!products_seller_id_fkey ( id, username, full_name, avatar_url )
-      `,
-      { count: "exact" },
-    )
-    .eq("status", "approved")
-
-  if (category) query = query.eq("category", category)
-  if (sellerId) query = query.eq("seller_id", sellerId)
-  if (q) query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`)
-  if (tags && tags.length) query = query.overlaps("tags", tags)
-  if (typeof minPrice === "number") query = query.gte("price", minPrice)
-  if (typeof maxPrice === "number") query = query.lte("price", maxPrice)
-  if (typeof minRating === "number") query = query.gte("rating_avg", minRating)
-  if (inStockOnly) query = query.gt("inventory", 0)
-
-  switch (sort) {
-    case "price_asc":
-      query = query.order("price", { ascending: true })
-      break
-    case "price_desc":
-      query = query.order("price", { ascending: false })
-      break
-    case "rating":
-      query = query.order("rating_avg", { ascending: false, nullsFirst: false })
-      break
-    case "popular":
-      query = query.order("rating_count", { ascending: false })
-      break
-    default:
-      query = query.order("created_at", { ascending: false })
+  const where = {
+    status: "approved" as const,
+    ...(category ? { category } : {}),
+    ...(sellerId ? { seller_id: sellerId } : {}),
+    ...(tags?.length ? { tags: { hasSome: tags } } : {}),
+    ...(inStockOnly ? { inventory: { gt: 0 } } : {}),
+    ...(typeof minPrice === "number" || typeof maxPrice === "number"
+      ? { price: { ...(typeof minPrice === "number" ? { gte: minPrice } : {}), ...(typeof maxPrice === "number" ? { lte: maxPrice } : {}) } }
+      : {}),
+    ...(typeof minRating === "number" ? { rating_avg: { gte: minRating } } : {}),
+    ...(q
+      ? {
+          OR: [
+            { title: { contains: q, mode: "insensitive" as const } },
+            { description: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
   }
 
-  const { data, count } = await query.range(offset, offset + limit - 1)
-  return {
-    products: (data ?? []) as unknown as ProductWithMedia[],
-    count: count ?? 0,
-  }
+  const orderBy =
+    sort === "price_asc"
+      ? { price: "asc" as const }
+      : sort === "price_desc"
+        ? { price: "desc" as const }
+        : sort === "rating"
+          ? { rating_avg: "desc" as const }
+          : sort === "popular"
+            ? { rating_count: "desc" as const }
+            : { created_at: "desc" as const }
+
+  const [products, count] = await prisma.$transaction([
+    prisma.product.findMany({
+      where,
+      include: {
+        product_media: { orderBy: { position: "asc" } },
+        seller: { select: { id: true, username: true, full_name: true, avatar_url: true } },
+      },
+      orderBy,
+      take: limit,
+      skip: offset,
+    }),
+    prisma.product.count({ where }),
+  ])
+
+  return { products, count }
 }
 
-export interface ProductDetail extends ProductWithMedia {
-  seller: {
-    id: string
-    username: string | null
-    full_name: string | null
-    avatar_url: string | null
-    is_verified: boolean
-  }
-}
-
-export async function getProductBySlug(
-  sellerUsername: string,
-  slug: string,
-): Promise<ProductDetail | null> {
-  const supabase = await createClient()
-  const { data: seller } = await supabase
-    .from("profiles")
-    .select("id, username, full_name, avatar_url, is_verified")
-    .eq("username", sellerUsername)
-    .maybeSingle()
+export async function getProductBySlug(sellerUsername: string, slug: string) {
+  const seller = await prisma.user.findFirst({
+    where: { username: sellerUsername },
+    select: { id: true, username: true, full_name: true, avatar_url: true, is_verified: true },
+  })
   if (!seller) return null
-  const sellerRow = seller as unknown as ProductDetail["seller"]
 
-  const { data: product } = await supabase
-    .from("products")
-    .select(
-      `
-        id, seller_id, category, title, slug, description, price, currency,
-        inventory, sku, tags, attributes, status, rating_avg, rating_count,
-        created_at, updated_at,
-        product_media ( id, product_id, kind, url, thumbnail_url, position, is_primary )
-      `,
-    )
-    .eq("seller_id", sellerRow.id)
-    .eq("slug", slug)
-    .maybeSingle()
-
+  const product = await prisma.product.findFirst({
+    where: { seller_id: seller.id, slug },
+    include: { product_media: { orderBy: { position: "asc" } } },
+  })
   if (!product) return null
-  return {
-    ...(product as unknown as ProductWithMedia),
-    seller: sellerRow,
-  }
+
+  return { ...product, seller }
 }

@@ -55,6 +55,11 @@ const FRAMES: Array<{
   },
 ]
 
+function sr(seed: number) {
+  const x = Math.sin(seed + 1) * 10000
+  return x - Math.floor(x)
+}
+
 function Particles() {
   const dots = Array.from({ length: 36 }, (_, i) => i)
   return (
@@ -63,10 +68,10 @@ function Particles() {
       aria-hidden="true"
     >
       {dots.map((i) => {
-        const cx = Math.random() * 100
-        const cy = Math.random() * 100
-        const r = Math.random() * 1.5 + 0.5
-        const delay = Math.random() * 8
+        const cx = sr(i * 4) * 100
+        const cy = sr(i * 4 + 1) * 100
+        const r = sr(i * 4 + 2) * 1.5 + 0.5
+        const delay = sr(i * 4 + 3) * 8
         return (
           <circle
             key={i}

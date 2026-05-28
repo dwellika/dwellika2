@@ -1,8 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-
-import { createClient } from "@/lib/supabase/server"
+import { auth } from "@/lib/auth/config"
+import { prisma } from "@/lib/prisma"
 import type { ReactionTarget } from "@/lib/types/database"
 
 type ActionResult = { ok: true } | { ok: false; error: string }
@@ -17,20 +17,18 @@ export async function postComment(
     const trimmed = body.trim()
     if (!trimmed) return { ok: false, error: "Write something." }
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return { ok: false, error: "Sign in to comment." }
+    const session = await auth()
+    if (!session?.user?.id) return { ok: false, error: "Sign in to comment." }
 
-    const { error } = await supabase.from("comments").insert({
-      user_id: user.id,
-      target_kind: targetKind,
-      target_id: targetId,
-      parent_id: parentId ?? null,
-      body: trimmed,
+    await prisma.comment.create({
+      data: {
+        user_id: session.user.id,
+        target_kind: targetKind,
+        target_id: targetId,
+        parent_id: parentId ?? null,
+        body: trimmed,
+      },
     })
-    if (error) return { ok: false, error: error.message }
 
     revalidatePath("/")
     return { ok: true }
@@ -41,13 +39,13 @@ export async function postComment(
 
 export async function deleteComment(commentId: string): Promise<ActionResult> {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return { ok: false, error: "Not authenticated" }
-    const { error } = await supabase.from("comments").delete().eq("id", commentId)
-    if (error) return { ok: false, error: error.message }
+    const session = await auth()
+    if (!session?.user?.id) return { ok: false, error: "Not authenticated" }
+
+    await prisma.comment.delete({
+      where: { id: commentId, user_id: session.user.id },
+    })
+
     revalidatePath("/")
     return { ok: true }
   } catch (e) {
