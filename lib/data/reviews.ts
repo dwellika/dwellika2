@@ -3,6 +3,8 @@ import "server-only"
 import { prisma } from "@/lib/prisma"
 import type { ReviewTarget } from "@/lib/types/database"
 
+export type ReviewWithReviewer = Awaited<ReturnType<typeof listReviews>>[number]
+
 export async function listReviews(target: { kind: ReviewTarget; id: string }, limit = 12) {
   return prisma.review.findMany({
     where: { target_kind: target.kind, target_id: target.id, is_hidden: false },

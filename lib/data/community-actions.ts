@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { auth } from "@/lib/auth/config"
 import { prisma } from "@/lib/prisma"
 import { uploadFile } from "@/lib/storage/upload"
@@ -25,6 +25,7 @@ export async function joinCommunity(communityId: string): Promise<ActionResult> 
       where: { id: communityId },
       data: { member_count: { increment: 1 } },
     }).catch(() => {})
+    revalidateTag("communities")
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {
@@ -42,6 +43,7 @@ export async function leaveCommunity(communityId: string): Promise<ActionResult>
       where: { id: communityId },
       data: { member_count: { decrement: 1 } },
     }).catch(() => {})
+    revalidateTag("communities")
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {
@@ -77,6 +79,7 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
       data: { community_id: communityId, author_id: userId, title, body, media, status: "approved" },
     })
 
+    revalidateTag("communities")
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {
@@ -91,6 +94,7 @@ export async function createPostComment(postId: string, body: string): Promise<A
     await prisma.comment.create({
       data: { user_id: userId, target_kind: "post", target_id: postId, body: body.trim() },
     })
+    revalidateTag("communities")
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {
@@ -118,6 +122,7 @@ export async function createPoll(formData: FormData): Promise<ActionResult> {
       },
     })
 
+    revalidateTag("communities")
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {
@@ -133,6 +138,7 @@ export async function votePoll(pollId: string, optionId: string): Promise<Action
       create: { poll_id: pollId, option_id: optionId, user_id: userId },
       update: { option_id: optionId },
     })
+    revalidateTag("communities")
     revalidatePath("/communities")
     return { ok: true }
   } catch (e) {

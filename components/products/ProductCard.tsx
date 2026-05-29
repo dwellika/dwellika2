@@ -87,7 +87,7 @@ export function ProductCard({
           {product.rating_avg ? (
             <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
               <Star className="size-3 fill-amber-400 text-amber-400" />
-              {product.rating_avg.toFixed(1)}
+              {Number(product.rating_avg).toFixed(1)}
               <span className="text-muted-foreground/70">({product.rating_count})</span>
             </p>
           ) : null}
@@ -111,7 +111,7 @@ export function ProductCard({
                   slug: product.slug,
                   title: product.title,
                   image: image ?? "/placeholder.svg",
-                  unitPrice: product.price,
+                  unitPrice: Number(product.price),
                   currency: product.currency,
                   sellerId: product.seller_id,
                 })
@@ -127,7 +127,8 @@ export function ProductCard({
   )
 }
 
-function formatPrice(price: number, currency: string) {
+function formatPrice(price: number | { toNumber(): number; toString(): string }, currency: string) {
+  if (typeof price !== "number") price = price.toNumber()
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(price)
   } catch {

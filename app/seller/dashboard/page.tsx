@@ -12,7 +12,7 @@ export default async function SellerDashboardPage() {
   const user = await requireRole("seller", "admin", "super_admin", "artist")
   const orderItems = await listSellerOrders(user.id)
 
-  const revenue = orderItems.reduce((s, oi) => s + (oi.subtotal ?? 0), 0)
+  const revenue = orderItems.reduce((s, oi) => s + Number(oi.subtotal ?? 0), 0)
   const orderCount = new Set(orderItems.map((oi) => oi.order_id)).size
 
   return (

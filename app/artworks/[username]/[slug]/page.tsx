@@ -122,7 +122,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
           description: data.description,
           url: pageUrl,
           images: imageUrls,
-          price: data.price,
+          price: data.price != null ? Number(data.price) : null,
           currency: data.currency,
           forSale: data.for_sale,
           artistName: data.artist.full_name ?? `@${data.artist.username}`,
@@ -182,7 +182,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
               {data.for_sale && data.price != null ? (
                 <>
                   <p className="font-display text-3xl">
-                    {formatPrice(data.price, data.currency)}
+                    {formatPrice(Number(data.price), data.currency)}
                   </p>
                   <AddToCartButton
                     item={{
@@ -191,7 +191,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
                       slug: data.slug,
                       title: data.title,
                       image: media[0]?.url ?? null,
-                      unitPrice: data.price,
+                      unitPrice: Number(data.price),
                       currency: data.currency,
                       sellerId: data.artist_id,
                       artistUsername: data.artist.username,

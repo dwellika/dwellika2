@@ -21,7 +21,7 @@ export default async function ChatPage({ params }: PageProps) {
 
   const messages = await listMessages(id, { limit: 200 })
   const others = chatData.participants.filter((p) => p.user_id !== user.id)
-  const other = others[0]?.profile ?? null
+  const other = others[0]?.user ?? null
 
   return (
     <div className="container-page py-6 md:py-10">
@@ -74,9 +74,9 @@ export default async function ChatPage({ params }: PageProps) {
             initialMessages={messages}
             participants={chatData.participants.map((p) => ({
               id: p.user_id,
-              username: p.profile?.username ?? null,
-              full_name: p.profile?.full_name ?? null,
-              avatar_url: p.profile?.avatar_url ?? null,
+              username: p.user?.username ?? null,
+              full_name: p.user?.full_name ?? null,
+              avatar_url: p.user?.avatar_url ?? null,
             }))}
           />
         </CardContent>

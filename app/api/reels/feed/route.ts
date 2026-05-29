@@ -53,12 +53,20 @@ export async function GET(request: Request) {
       ).catch(() => {})
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       reels,
       nextCursor: cursor + LIMIT,
       hasMore: reels.length === LIMIT,
     })
+    // Cache personalized feeds briefly; trending can be cached longer
+    response.headers.set(
+      "Cache-Control",
+      mode === "trending"
+        ? "public, s-maxage=30, stale-while-revalidate=120"
+        : "private, s-maxage=0",
+    )
+    return response
   } catch (e) {
     console.error("[reels/feed]", e)
     // Fallback to basic list

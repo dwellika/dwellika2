@@ -94,15 +94,18 @@ export function SmartSearch({
       </form>
 
       {unavailable ? (
-        <p className="text-sm text-muted-foreground">
-          AI search is not available yet — add{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">OPENAI_API_KEY</code>{" "}
-          to <code className="rounded bg-muted px-1 py-0.5 text-xs">.env.local</code> to enable.
-        </p>
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
+          AI search is warming up — try browsing artists or collections in the meantime.
+        </div>
       ) : error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm" role="alert">
+          <p className="font-medium text-destructive">Search unavailable</p>
+          <p className="mt-1 text-muted-foreground">
+            {error} — browse the{" "}
+            <a href="/artists" className="underline underline-offset-2">artists page</a>{" "}
+            to explore manually.
+          </p>
+        </div>
       ) : null}
 
       {results ? (

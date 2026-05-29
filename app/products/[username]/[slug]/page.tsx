@@ -97,10 +97,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
           description: data.description,
           url: pageUrl,
           images: imageUrls,
-          price: data.price,
+          price: Number(data.price),
           currency: data.currency,
           inventory: data.inventory,
-          ratingAvg: data.rating_avg,
+          ratingAvg: data.rating_avg != null ? Number(data.rating_avg) : null,
           ratingCount: data.rating_count,
           sellerName: data.seller.full_name ?? `@${data.seller.username}`,
         })}
@@ -161,7 +161,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <Card>
             <CardContent className="space-y-4 p-5">
               <p className="font-display text-3xl">
-                {formatPrice(data.price, data.currency)}
+                {formatPrice(Number(data.price), data.currency)}
               </p>
               <p className="text-sm text-muted-foreground">
                 {data.inventory > 0 ? `${data.inventory} in stock` : "Sold out"}
@@ -173,7 +173,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                   slug: data.slug,
                   title: data.title,
                   image: media[0]?.url ?? null,
-                  unitPrice: data.price,
+                  unitPrice: Number(data.price),
                   currency: data.currency,
                   sellerId: data.seller_id,
                 }}

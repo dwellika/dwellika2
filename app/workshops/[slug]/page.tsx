@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps) {
   }
 }
 
-const fmt = (iso: string) =>
+const fmt = (iso: Date | string) =>
   new Date(iso).toLocaleString(undefined, {
     weekday: "short",
     month: "short",
@@ -109,7 +109,7 @@ export default async function WorkshopPage({ params }: PageProps) {
                 ) : (
                   <Badge variant="secondary">Upcoming</Badge>
                 )}
-                {workshop.price === 0 ? <Badge variant="default">Free</Badge> : null}
+                {Number(workshop.price) === 0 ? <Badge variant="default">Free</Badge> : null}
               </div>
               <h1 className="font-display text-4xl md:text-5xl">{workshop.title}</h1>
               {workshop.host ? (
@@ -166,7 +166,7 @@ export default async function WorkshopPage({ params }: PageProps) {
             <Card>
               <CardContent className="space-y-4 p-5">
                 <p className="font-display text-3xl">
-                  {workshop.price === 0
+                  {Number(workshop.price) === 0
                     ? "Free"
                     : `${workshop.currency} ${Number(workshop.price).toLocaleString()}`}
                 </p>

@@ -1,37 +1,53 @@
 import "server-only"
 
+import { unstable_cache } from "next/cache"
 import { prisma } from "@/lib/prisma"
+import type { Community, CommunityPost } from "@prisma/client"
 
-export async function listCommunities({
-  q,
-  category,
-  limit = 24,
-  offset = 0,
-}: {
-  q?: string
-  category?: string
-  limit?: number
-  offset?: number
-} = {}) {
-  const where = {
-    ...(category ? { category } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" as const } },
-            { description: { contains: q, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-  }
-
-  const [communities, count] = await prisma.$transaction([
-    prisma.community.findMany({ where, orderBy: { member_count: "desc" }, take: limit, skip: offset }),
-    prisma.community.count({ where }),
-  ])
-
-  return { communities, count }
+export type CommunityRow = Community
+export type CommunityPostRow = CommunityPost & {
+  author: { id: string; username: string | null; full_name: string | null; avatar_url: string | null } | null
+  polls: Array<{
+    id: string
+    question: string
+    options: Array<{ id: string; label: string; position: number }>
+  }>
 }
+
+export const listCommunities = unstable_cache(
+  async ({
+    q,
+    category,
+    limit = 24,
+    offset = 0,
+  }: {
+    q?: string
+    category?: string
+    limit?: number
+    offset?: number
+  } = {}) => {
+    const where = {
+      ...(category ? { category } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" as const } },
+              { description: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    }
+
+    const [communities, count] = await prisma.$transaction([
+      prisma.community.findMany({ where, orderBy: { member_count: "desc" }, take: limit, skip: offset }),
+      prisma.community.count({ where }),
+    ])
+
+    return { communities, count }
+  },
+  ["list-communities"],
+  { revalidate: 300, tags: ["communities"] },
+)
 
 export async function getCommunityBySlug(slug: string) {
   return prisma.community.findUnique({ where: { slug } })

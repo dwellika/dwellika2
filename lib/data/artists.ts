@@ -1,5 +1,7 @@
 import "server-only"
 
+import { cache } from "react"
+import { unstable_cache } from "next/cache"
 import { prisma } from "@/lib/prisma"
 
 export interface ArtistListParams {
@@ -11,62 +13,73 @@ export interface ArtistListParams {
   sort?: "newest" | "followers" | "works"
 }
 
-export async function listArtists({
-  q,
-  mediums,
-  styles,
-  limit = 24,
-  offset = 0,
-}: ArtistListParams = {}) {
-  const where = {
-    role: "artist" as const,
-    artist_profile: { isNot: null },
-    ...(mediums?.length || styles?.length
-      ? {
+export const listArtists = unstable_cache(
+  async ({
+    q,
+    mediums,
+    styles,
+    limit = 24,
+    offset = 0,
+  }: ArtistListParams = {}) => {
+    const where = {
+      role: "artist" as const,
+      artist_profile: { isNot: null },
+      ...(mediums?.length || styles?.length
+        ? {
+            artist_profile: {
+              ...(mediums?.length ? { mediums: { hasSome: mediums } } : {}),
+              ...(styles?.length ? { styles: { hasSome: styles } } : {}),
+            },
+          }
+        : {}),
+      ...(q
+        ? {
+            OR: [
+              { username: { contains: q, mode: "insensitive" as const } },
+              { full_name: { contains: q, mode: "insensitive" as const } },
+              { bio: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    }
+
+    const [artists, count] = await prisma.$transaction([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          username: true,
+          full_name: true,
+          avatar_url: true,
+          cover_url: true,
+          bio: true,
+          is_verified: true,
+          location: true,
           artist_profile: {
-            ...(mediums?.length ? { mediums: { hasSome: mediums } } : {}),
-            ...(styles?.length ? { styles: { hasSome: styles } } : {}),
+            select: { tier: true, specialty: true, styles: true, mediums: true, is_verified: true },
           },
-        }
-      : {}),
-    ...(q
-      ? {
-          OR: [
-            { username: { contains: q, mode: "insensitive" as const } },
-            { full_name: { contains: q, mode: "insensitive" as const } },
-            { bio: { contains: q, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-  }
-
-  const [artists, count] = await prisma.$transaction([
-    prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        username: true,
-        full_name: true,
-        avatar_url: true,
-        cover_url: true,
-        bio: true,
-        is_verified: true,
-        location: true,
-        artist_profile: {
-          select: { tier: true, specialty: true, styles: true, mediums: true, is_verified: true },
         },
-      },
-      orderBy: { created_at: "desc" },
-      take: limit,
-      skip: offset,
-    }),
-    prisma.user.count({ where }),
-  ])
+        orderBy: { created_at: "desc" },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.user.count({ where }),
+    ])
 
-  return { artists, count, error: null }
-}
+    // Remap artist_profile → artist_profiles so it matches ArtistCardRow
+    const mapped = artists.map(({ artist_profile, ...rest }) => ({
+      ...rest,
+      artist_profiles: artist_profile,
+    }))
 
-export async function getProfileByUsername(username: string) {
+    return { artists: mapped, count, error: null }
+  },
+  ["list-artists"],
+  { revalidate: 120, tags: ["artists"] },
+)
+
+// cache() deduplicates calls within the same request (e.g. generateMetadata + page)
+export const getProfileByUsername = cache(async (username: string) => {
   return prisma.user.findFirst({
     where: { username },
     select: {
@@ -88,7 +101,7 @@ export async function getProfileByUsername(username: string) {
       },
     },
   })
-}
+})
 
 export async function getFollowCounts(userId: string) {
   const [followersCount, followingCount] = await prisma.$transaction([

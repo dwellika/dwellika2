@@ -33,7 +33,7 @@ export async function uploadFile(
   } else if (source instanceof Buffer) {
     dataUri = `data:application/octet-stream;base64,${source.toString("base64")}`
   } else {
-    dataUri = source
+    dataUri = source as string
   }
 
   const result = await cloudinary.uploader.upload(dataUri, {

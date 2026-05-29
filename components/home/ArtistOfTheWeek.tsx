@@ -1,7 +1,4 @@
-"use client"
-
 import Link from "next/link"
-import { motion } from "framer-motion"
 import { Sparkles } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -19,6 +16,8 @@ export function ArtistOfTheWeek() {
   const filler = MOCK_ARTWORKS.slice(0, 3)
   const display = (works.length ? works : filler).slice(0, 3)
 
+  const weekOf = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })
+
   return (
     <Section eyebrow="Spotlight" title="Artist of the week">
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card">
@@ -34,7 +33,7 @@ export function ArtistOfTheWeek() {
         <div className="relative grid gap-8 p-8 md:grid-cols-2 md:p-12">
           <div>
             <Badge variant="secondary" className="gap-1">
-              <Sparkles className="size-3" /> Week of {new Date().toLocaleDateString(undefined, { month: "long", day: "numeric" })}
+              <Sparkles className="size-3" /> Week of {weekOf}
             </Badge>
             <h3 className="mt-4 font-display text-4xl md:text-5xl">{artist.name}</h3>
             <p className="mt-1 text-muted-foreground">
@@ -72,12 +71,8 @@ export function ArtistOfTheWeek() {
 
           <div className="grid grid-cols-3 gap-3">
             {display.map((w, i) => (
-              <motion.figure
+              <figure
                 key={w.id}
-                initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
                 className={
                   i === 0
                     ? "col-span-2 row-span-2 overflow-hidden rounded-2xl"
@@ -95,7 +90,7 @@ export function ArtistOfTheWeek() {
                     className="object-cover"
                   />
                 </div>
-              </motion.figure>
+              </figure>
             ))}
           </div>
         </div>

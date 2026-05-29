@@ -192,11 +192,11 @@ export default async function CoursePage({ params }: PageProps) {
                     <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full bg-gradient-to-r from-primary to-accent"
-                        style={{ width: `${enrollment?.progress ?? 0}%` }}
+                        style={{ width: `${Number(enrollment?.progress ?? 0)}%` }}
                       />
                     </div>
                     <p className="mt-1 text-xs tabular-nums text-muted-foreground">
-                      {Math.round(enrollment?.progress ?? 0)}%
+                      {Math.round(Number(enrollment?.progress ?? 0))}%
                     </p>
                   </div>
                 ) : null}

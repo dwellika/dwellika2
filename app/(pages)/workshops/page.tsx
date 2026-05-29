@@ -11,7 +11,7 @@ export const metadata = {
   description: "Live and recorded workshops with the artists who define each medium.",
 }
 
-const fmt = (iso: string) =>
+const fmt = (iso: Date | string) =>
   new Date(iso).toLocaleString(undefined, {
     weekday: "short",
     month: "short",
@@ -102,7 +102,7 @@ function WorkshopCard({
               <Calendar className="size-3.5" /> {fmt(workshop.starts_at)}
             </span>
             <span className="font-display text-sm">
-              {workshop.price === 0 ? "Free" : `${workshop.currency} ${Number(workshop.price).toLocaleString()}`}
+              {Number(workshop.price) === 0 ? "Free" : `${workshop.currency} ${Number(workshop.price).toLocaleString()}`}
             </span>
           </div>
         </CardContent>

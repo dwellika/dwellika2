@@ -13,7 +13,7 @@ export const metadata = {
   description: "Open contests, voting rounds, and a hall of past winners.",
 }
 
-function timeLeft(dateStr: string | null) {
+function timeLeft(dateStr: Date | string | null) {
   if (!dateStr) return null
   const diff = new Date(dateStr).getTime() - Date.now()
   if (diff <= 0) return "Closed"
@@ -48,11 +48,14 @@ export default async function CompetitionsPage() {
         submissions_open_at: null,
         submissions_close_at: null,
         voting_open_at: null,
-        voting_close_at: c.endsAt,
+        voting_close_at: new Date(c.endsAt),
         announces_at: null,
         category: c.category,
         submission_count: c.participants,
         vote_count: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+        created_by: null,
       }))
     : []
 

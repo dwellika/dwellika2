@@ -1,5 +1,6 @@
 import "server-only"
 import { cache } from "react"
+import { unstable_cache } from "next/cache"
 
 import { prisma } from "@/lib/prisma"
 
@@ -17,7 +18,13 @@ export interface ArtworkListParams {
   status?: "approved" | "pending" | "draft" | "all"
 }
 
-export async function listArtworks({
+export const listArtworks = unstable_cache(
+  async (params: ArtworkListParams = {}) => _listArtworksImpl(params),
+  ["list-artworks"],
+  { revalidate: 60, tags: ["artworks"] },
+)
+
+async function _listArtworksImpl({
   q,
   artistId,
   mediums,
@@ -61,7 +68,8 @@ export async function listArtworks({
     prisma.artwork.findMany({
       where,
       include: {
-        artwork_media: { orderBy: { position: "asc" } },
+        // Only fetch the first (primary) media item for listing thumbnails
+        artwork_media: { orderBy: { position: "asc" }, take: 1 },
         artist: { select: { id: true, username: true, full_name: true, avatar_url: true } },
       },
       orderBy,

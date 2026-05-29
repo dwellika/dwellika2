@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/lib/auth/config"
@@ -97,6 +97,8 @@ export async function createArtwork(formData: FormData): Promise<ActionResult | 
     await prisma.artworkMedia.createMany({ data: mediaData })
   }
 
+  revalidateTag("artworks")
+  revalidateTag("artists")
   revalidatePath("/artist/dashboard")
   redirect("/artist/dashboard")
 }

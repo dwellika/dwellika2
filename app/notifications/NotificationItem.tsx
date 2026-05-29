@@ -35,8 +35,8 @@ interface NotificationItemProps {
     title: string
     body: string | null
     action_url: string | null
-    read_at: string | null
-    created_at: string
+    read_at: Date | string | null
+    created_at: Date | string
     actor: { username: string | null; full_name: string | null; avatar_url: string | null } | null
   }
 }

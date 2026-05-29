@@ -297,7 +297,7 @@ function Phase({
 }: {
   active: boolean
   label: string
-  date: string | null
+  date: Date | string | null
   caption: string
 }) {
   return (

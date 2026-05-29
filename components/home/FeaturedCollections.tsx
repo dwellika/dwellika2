@@ -1,7 +1,4 @@
-"use client"
-
 import Link from "next/link"
-import { motion } from "framer-motion"
 
 import { SmartImage } from "@/components/ui/smart-image"
 import { MOCK_ARTWORKS, FEATURED_COLLECTIONS } from "@/lib/mock/artworks"
@@ -21,51 +18,37 @@ export function FeaturedCollections() {
       <div className="grid gap-6 lg:grid-cols-[1.1fr_2fr]">
         {/* Curator rail */}
         <div className="space-y-3">
-          {FEATURED_COLLECTIONS.map((c, i) => (
-            <motion.div
+          {FEATURED_COLLECTIONS.map((c) => (
+            <Link
               key={c.id}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: i * 0.06 }}
+              href={`/collections/${c.id}`}
+              className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-3 transition-all hover:border-primary/40 hover:shadow-glow"
             >
-              <Link
-                href={`/collections/${c.id}`}
-                className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-3 transition-all hover:border-primary/40 hover:shadow-glow"
-              >
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
-                  <SmartImage
-                    src={c.image}
-                    alt={c.title}
-                    kind="cover"
-                    seed={c.title}
-                    fill
-                    sizes="80px"
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-display text-lg">{c.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {c.curator} · {c.count} works
-                  </p>
-                </div>
-              </Link>
-            </motion.div>
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
+                <SmartImage
+                  src={c.image}
+                  alt={c.title}
+                  kind="cover"
+                  seed={c.title}
+                  fill
+                  sizes="80px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="font-display text-lg">{c.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {c.curator} · {c.count} works
+                </p>
+              </div>
+            </Link>
           ))}
         </div>
 
         {/* Masonry */}
         <div className="columns-1 gap-3 [column-fill:_balance] sm:columns-2 md:columns-3">
-          {masonry.map((w, i) => (
-            <motion.figure
-              key={w.id}
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: (i % 6) * 0.04 }}
-              className="mb-3 break-inside-avoid"
-            >
+          {masonry.map((w) => (
+            <figure key={w.id} className="mb-3 break-inside-avoid">
               <Link
                 href="/shopping/arts"
                 className="group block overflow-hidden rounded-xl bg-card"
@@ -89,7 +72,7 @@ export function FeaturedCollections() {
                   </div>
                 </div>
               </Link>
-            </motion.figure>
+            </figure>
           ))}
         </div>
       </div>

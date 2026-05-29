@@ -54,9 +54,9 @@ export function PostCard({ post, isAuthed }: PostCardProps) {
           <p className="whitespace-pre-line text-sm">{renderMentions(post.body)}</p>
         ) : null}
 
-        {post.media?.length ? (
-          <div className={`grid gap-2 ${post.media.length > 1 ? "grid-cols-2" : ""}`}>
-            {post.media.map((m, i) => (
+        {Array.isArray(post.media) && post.media.length ? (
+          <div className={`grid gap-2 ${(post.media as unknown[]).length > 1 ? "grid-cols-2" : ""}`}>
+            {(post.media as Array<{ url: string; kind: "image" | "video" }>).map((m, i) => (
               <div key={i} className="relative aspect-video overflow-hidden rounded-lg">
                 {m.kind === "video" ? (
                   // eslint-disable-next-line jsx-a11y/media-has-caption

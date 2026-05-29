@@ -50,7 +50,7 @@ export function ArtworkCard({
       slug: artwork.slug,
       title: artwork.title,
       image: image ?? "/placeholder.svg",
-      unitPrice: artwork.price,
+      unitPrice: Number(artwork.price),
       currency: artwork.currency,
       sellerId: artwork.artist_id,
       artistUsername: artist.username,
@@ -153,7 +153,8 @@ export function ArtworkCard({
   )
 }
 
-function formatPrice(price: number, currency: string) {
+function formatPrice(price: number | { toNumber(): number; toString(): string }, currency: string) {
+  if (typeof price !== "number") price = price.toNumber()
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(price)
   } catch {

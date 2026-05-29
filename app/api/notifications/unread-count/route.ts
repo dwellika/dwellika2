@@ -13,5 +13,8 @@ export async function GET() {
     where: { user_id: session.user.id, read_at: null },
   })
 
-  return NextResponse.json({ count })
+  const response = NextResponse.json({ count })
+  // Allow brief client-side caching to reduce DB hammering from polling
+  response.headers.set("Cache-Control", "private, max-age=15, stale-while-revalidate=30")
+  return response
 }

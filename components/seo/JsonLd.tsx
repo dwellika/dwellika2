@@ -17,7 +17,7 @@ export function JsonLd({ data }: JsonLdProps) {
 }
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.dwellika.in"
 
 export function artworkJsonLd(input: {
   title: string
@@ -130,8 +130,8 @@ export function eventJsonLd(input: {
   name: string
   description: string | null
   url: string
-  startsAt: string
-  endsAt: string
+  startsAt: Date | string
+  endsAt: Date | string
   image?: string | null
   hostName?: string
   isVirtual?: boolean

@@ -27,7 +27,10 @@ interface PageProps {
 
 export default async function CommunitiesPage({ searchParams }: PageProps) {
   const { q, category } = await searchParams
-  const { communities, count } = await listCommunities({ q, category, limit: 30 })
+  const { communities, count } = await listCommunities({ q, category, limit: 30 }).catch(() => ({
+    communities: [],
+    count: 0,
+  }))
 
   return (
     <div className="container-page py-12">

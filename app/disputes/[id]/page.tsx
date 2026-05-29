@@ -59,9 +59,9 @@ export default async function DisputePage({ params }: PageProps) {
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-line text-sm">{dispute.description}</p>
-                {dispute.evidence?.length ? (
+                {Array.isArray(dispute.evidence) && dispute.evidence.length ? (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {dispute.evidence.map((e, i) => (
+                    {(dispute.evidence as Array<{ url: string; name?: string }>).map((e, i) => (
                       <a
                         key={i}
                         href={e.url}
@@ -69,7 +69,7 @@ export default async function DisputePage({ params }: PageProps) {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted/40"
                       >
-                        <Paperclip className="size-3" /> {e.name}
+                        <Paperclip className="size-3" /> {e.name ?? "Evidence"}
                       </a>
                     ))}
                   </div>

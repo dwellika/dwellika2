@@ -97,21 +97,21 @@ function CommentRow({
 }) {
   return (
     <div className="flex gap-3">
-      {comment.author?.username ? (
-        <Link href={`/u/${comment.author.username}`} className="shrink-0">
+      {comment.user?.username ? (
+        <Link href={`/u/${comment.user.username}`} className="shrink-0">
           <Avatar className="size-9">
-            <AvatarImage src={comment.author.avatar_url ?? undefined} />
-            <AvatarFallback>{(comment.author.full_name ?? "?").slice(0, 2)}</AvatarFallback>
+            <AvatarImage src={comment.user.avatar_url ?? undefined} />
+            <AvatarFallback>{(comment.user.full_name ?? "?").slice(0, 2)}</AvatarFallback>
           </Avatar>
         </Link>
       ) : null}
       <div className="min-w-0 flex-1">
         <div className="rounded-2xl bg-muted/40 px-4 py-2">
           <Link
-            href={`/u/${comment.author?.username}`}
+            href={`/u/${comment.user?.username}`}
             className="text-sm font-medium hover:underline"
           >
-            {comment.author?.full_name ?? `@${comment.author?.username}`}
+            {comment.user?.full_name ?? `@${comment.user?.username}`}
           </Link>
           <p className="mt-0.5 whitespace-pre-line text-sm">{renderMentions(comment.body)}</p>
         </div>

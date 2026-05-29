@@ -89,6 +89,7 @@ export function ReelsFeed({
   const [cursor, setCursor] = useState(initialReels.length)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [commentReelId, setCommentReelId] = useState<string | null>(null)
   const [shareReelId, setShareReelId] = useState<string | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -115,6 +116,7 @@ export function ReelsFeed({
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return
     setLoading(true)
+    setLoadError(false)
     try {
       const res = await fetch(`/api/reels/feed?cursor=${cursor}&mode=personalized`)
       const data = await res.json()
@@ -132,7 +134,7 @@ export function ReelsFeed({
         setHasMore(false)
       }
     } catch {
-      setHasMore(false)
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
@@ -173,6 +175,21 @@ export function ReelsFeed({
           {loading && (
             <div className="flex h-[100dvh] snap-start items-center justify-center bg-black md:h-[calc(100dvh-4rem)]">
               <Loader2 className="size-8 animate-spin text-white/60" />
+            </div>
+          )}
+
+          {/* Load-more error with retry */}
+          {loadError && (
+            <div className="flex h-40 snap-start flex-col items-center justify-center gap-3 bg-black text-white/60">
+              <p className="text-sm">Couldn&apos;t load more reels</p>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-xs text-white/80 transition hover:bg-white/10"
+                onClick={() => loadMore()}
+              >
+                <X className="size-3 rotate-45" />
+                Retry
+              </button>
             </div>
           )}
 

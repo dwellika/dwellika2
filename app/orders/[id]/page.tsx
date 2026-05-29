@@ -156,7 +156,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
                   </div>
                   <div className="text-right">
                     <p className="font-display tabular-nums">
-                      {formatPrice(item.subtotal ?? item.unit_price * item.quantity, order.currency)}
+                      {formatPrice(Number(item.subtotal ?? 0) || Number(item.unit_price) * item.quantity, order.currency)}
                     </p>
                     <p className="text-xs text-muted-foreground">qty {item.quantity}</p>
                     {item.target_kind === "artwork" && order.status === "delivered" ? (
@@ -183,7 +183,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
               <Row label="Subtotal" value={formatPrice(order.subtotal, order.currency)} />
               <Row label="Shipping" value={formatPrice(order.shipping, order.currency)} />
               <Row label="Tax" value={formatPrice(order.tax, order.currency)} />
-              {order.discount > 0 ? (
+              {Number(order.discount) > 0 ? (
                 <Row label="Discount" value={`- ${formatPrice(order.discount, order.currency)}`} />
               ) : null}
               <Separator />
@@ -230,10 +230,11 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
   )
 }
 
-function formatPrice(amount: number, currency: string) {
+function formatPrice(amount: number | { toNumber(): number }, currency: string) {
+  const n = typeof amount === "number" ? amount : amount.toNumber()
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount)
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n)
   } catch {
-    return `${currency} ${amount.toLocaleString()}`
+    return `${currency} ${n.toLocaleString()}`
   }
 }

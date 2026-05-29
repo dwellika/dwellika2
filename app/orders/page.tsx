@@ -91,10 +91,11 @@ export default async function OrdersPage() {
   )
 }
 
-function formatPrice(amount: number, currency: string) {
+function formatPrice(amount: number | { toNumber(): number }, currency: string) {
+  const n = typeof amount === "number" ? amount : amount.toNumber()
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount)
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n)
   } catch {
-    return `${currency} ${amount.toLocaleString()}`
+    return `${currency} ${n.toLocaleString()}`
   }
 }
