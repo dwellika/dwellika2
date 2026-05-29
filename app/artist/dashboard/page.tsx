@@ -1,20 +1,11 @@
 import Link from "next/link"
 import { Eye, Heart, Plus, TrendingUp, Users } from "lucide-react"
 
-import dynamic from "next/dynamic"
-
-const BarSeriesChart = dynamic(
-  () => import("@/components/charts/Charts").then((m) => ({ default: m.BarSeriesChart })),
-  { ssr: false },
-)
-const Sparkline = dynamic(
-  () => import("@/components/charts/Charts").then((m) => ({ default: m.Sparkline })),
-  { ssr: false },
-)
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SmartImage } from "@/components/ui/smart-image"
+import { DashboardCharts } from "./DashboardCharts"
 import { requireRole } from "@/lib/auth/rbac"
 import { artistAnalytics } from "@/lib/data/analytics"
 import { listArtworks } from "@/lib/data/artworks"
@@ -79,24 +70,10 @@ export default async function ArtistDashboardPage() {
             sub="sales / views"
           />
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Followers gained per day</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Sparkline data={analytics.followerSeries} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily sales</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BarSeriesChart data={analytics.salesSeries} height={120} />
-            </CardContent>
-          </Card>
-        </div>
+        <DashboardCharts
+          followerSeries={analytics.followerSeries}
+          salesSeries={analytics.salesSeries}
+        />
       </section>
 
       <h2 className="mb-4 font-display text-2xl">My artworks</h2>
