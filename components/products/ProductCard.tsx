@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { motion } from "framer-motion"
 import { ShoppingBag, Star } from "lucide-react"
 import { toast } from "sonner"
 
@@ -40,9 +39,8 @@ export function ProductCard({
     : `/products/${product.id}`
 
   return (
-    <motion.article
-      whileHover={{ y: -4 }}
-      className={cn("group overflow-hidden rounded-2xl border border-border bg-card", className)}
+    <article
+      className={cn("group overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-300 ease-out hover:-translate-y-1", className)}
     >
       <Link href={href} className="block">
         <div className="relative aspect-square w-full overflow-hidden">
@@ -123,7 +121,7 @@ export function ProductCard({
           </div>
         </div>
       </Link>
-    </motion.article>
+    </article>
   )
 }
 

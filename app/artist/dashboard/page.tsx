@@ -1,7 +1,16 @@
 import Link from "next/link"
 import { Eye, Heart, Plus, TrendingUp, Users } from "lucide-react"
 
-import { BarSeriesChart, Sparkline } from "@/components/charts/Charts"
+import dynamic from "next/dynamic"
+
+const BarSeriesChart = dynamic(
+  () => import("@/components/charts/Charts").then((m) => ({ default: m.BarSeriesChart })),
+  { ssr: false },
+)
+const Sparkline = dynamic(
+  () => import("@/components/charts/Charts").then((m) => ({ default: m.Sparkline })),
+  { ssr: false },
+)
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

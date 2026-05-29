@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useRef, useState } from "react"
-import { motion } from "framer-motion"
 import { ShoppingBag, Eye } from "lucide-react"
 import { toast } from "sonner"
 
@@ -59,10 +58,8 @@ export function ArtworkCard({
   }
 
   return (
-    <motion.article
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className={cn("group relative overflow-hidden rounded-2xl border border-border bg-card", className)}
+    <article
+      className={cn("group relative overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-300 ease-out hover:-translate-y-1", className)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -149,7 +146,7 @@ export function ArtworkCard({
           </div>
         </div>
       </Link>
-    </motion.article>
+    </article>
   )
 }
 

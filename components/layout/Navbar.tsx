@@ -11,17 +11,27 @@ import { SmartImage } from "@/components/ui/smart-image"
 import { cn } from "@/lib/utils"
 
 import { CartIndicator } from "./CartIndicator"
-import { CommandTrigger } from "./CommandMenu"
+import { CommandTrigger } from "./CommandTrigger"
 import { MainNav } from "./MainNav"
+import { MobileNav } from "./MobileNav"
+import { ModeToggle } from "./ModeToggle"
 
+// Deferred until after hydration — they make API calls and don't affect LCP
 const CommandMenu = dynamic(
   () => import("./CommandMenu").then((m) => ({ default: m.CommandMenu })),
   { ssr: false },
 )
-import { MobileNav } from "./MobileNav"
-import { ModeToggle } from "./ModeToggle"
-import { NotificationBell } from "./NotificationBell"
-import { UserMenu } from "./UserMenu"
+const NotificationBell = dynamic(
+  () => import("./NotificationBell").then((m) => ({ default: m.NotificationBell })),
+  { ssr: false },
+)
+const UserMenu = dynamic(
+  () => import("./UserMenu").then((m) => ({ default: m.UserMenu })),
+  {
+    ssr: false,
+    loading: () => <div className="h-9 w-24 animate-pulse rounded-md bg-muted/40" />,
+  },
+)
 
 export function Navbar() {
   const [cmdOpen, setCmdOpen] = useState(false)

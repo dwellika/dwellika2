@@ -5,7 +5,11 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   compress: true,
   poweredByHeader: false,
-  serverExternalPackages: ["bcryptjs"],
+  serverExternalPackages: ["bcryptjs", "@prisma/client", "prisma"],
+  // Exclude heavy server-only packages from edge/client bundles
+  outputFileTracingExcludes: {
+    "*": ["./node_modules/@swc/core*", "./node_modules/sharp*"],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 3600,
@@ -26,8 +30,8 @@ const nextConfig = {
       "@radix-ui/react-icons",
       "recharts",
       "date-fns",
-      "@tanstack/react-query",
       "embla-carousel-react",
+      "@stripe/react-stripe-js",
     ],
   },
   async headers() {

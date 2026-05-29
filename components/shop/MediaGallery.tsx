@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
 
 import { SmartImage } from "@/components/ui/smart-image"
 import { cn } from "@/lib/utils"
@@ -58,13 +57,7 @@ export function MediaGallery({ media, alt }: MediaGalleryProps) {
       </div>
 
       {/* Main viewer */}
-      <motion.div
-        key={current?.url}
-        initial={{ opacity: 0, scale: 0.99 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
-        className="order-1 md:order-2"
-      >
+      <div className="order-1 md:order-2 transition-opacity duration-300">
         <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-border bg-card">
           {current?.kind === "video" ? (
             <video
@@ -86,7 +79,7 @@ export function MediaGallery({ media, alt }: MediaGalleryProps) {
             />
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
