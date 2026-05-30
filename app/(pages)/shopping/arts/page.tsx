@@ -1,4 +1,7 @@
+import { Suspense } from "react"
+
 import { ArtworkCard } from "@/components/artworks/ArtworkCard"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { ShopToolbar } from "@/components/shop/ShopToolbar"
 import { getCurrentUser } from "@/lib/auth/rbac"
 import { listArtworks } from "@/lib/data/artworks"
@@ -20,6 +23,8 @@ const SORTS = [
   { value: "price_desc", label: "Price: high → low" },
 ]
 
+const PAGE_SIZE = 32
+
 interface PageProps {
   searchParams: Promise<{
     q?: string
@@ -27,11 +32,16 @@ interface PageProps {
     sort?: "newest" | "popular" | "price_asc" | "price_desc"
     minPrice?: string
     maxPrice?: string
+    page?: string
   }>
 }
 
 export default async function ArtsPage({ searchParams }: PageProps) {
-  const { q, medium, sort = "newest", minPrice, maxPrice } = await searchParams
+  const params = await searchParams
+  const { q, medium, sort = "newest", minPrice, maxPrice, page: pageStr } = params
+  const page = Math.max(1, Number(pageStr ?? 1) || 1)
+  const offset = (page - 1) * PAGE_SIZE
+
   const viewer = await getCurrentUser()
 
   const { artworks, count } = await listArtworks({
@@ -41,13 +51,14 @@ export default async function ArtsPage({ searchParams }: PageProps) {
     sort,
     minPrice: minPrice ? Number(minPrice) : undefined,
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
-    limit: 32,
+    limit: PAGE_SIZE,
+    offset,
   })
 
-  const usingMock = artworks.length === 0
+  const usingMock = artworks.length === 0 && count === 0
 
   return (
-    <div className="container-page py-12">
+    <div className="container-page pb-12 pt-16 sm:pt-20">
       <header className="mb-6">
         <p className="text-xs uppercase tracking-[0.25em] text-primary">Shop</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">Original artworks</h1>
@@ -58,12 +69,14 @@ export default async function ArtsPage({ searchParams }: PageProps) {
         </p>
       </header>
 
-      <ShopToolbar
-        searchPlaceholder="Search artworks…"
-        sortOptions={SORTS}
-        filters={[{ id: "medium", label: "Medium", options: MEDIUMS }]}
-        priceRange={{ min: 0, max: 100000 }}
-      />
+      <Suspense>
+        <ShopToolbar
+          searchPlaceholder="Search artworks…"
+          sortOptions={SORTS}
+          filters={[{ id: "medium", label: "Medium", options: MEDIUMS }]}
+          priceRange={{ min: 0, max: 100000 }}
+        />
+      </Suspense>
 
       {usingMock ? (
         <>
@@ -89,25 +102,35 @@ export default async function ArtsPage({ searchParams }: PageProps) {
             ))}
           </div>
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Showing curated examples — no published artworks in your Supabase yet.
+            Showing curated examples — no published artworks yet.
           </p>
         </>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:gap-5 md:grid-cols-3 lg:grid-cols-4">
-          {artworks.map((a) => (
-            <ArtworkCard
-              key={a.id}
-              artwork={a}
-              artist={{
-                id: a.artist_id,
-                username: a.artist?.username ?? null,
-                full_name: a.artist?.full_name ?? null,
-                avatar_url: a.artist?.avatar_url ?? null,
-              }}
-              isAuthed={Boolean(viewer)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-3 md:gap-5 md:grid-cols-3 lg:grid-cols-4">
+            {artworks.map((a) => (
+              <ArtworkCard
+                key={a.id}
+                artwork={a}
+                artist={{
+                  id: a.artist_id,
+                  username: a.artist?.username ?? null,
+                  full_name: a.artist?.full_name ?? null,
+                  avatar_url: a.artist?.avatar_url ?? null,
+                }}
+                isAuthed={Boolean(viewer)}
+              />
+            ))}
+          </div>
+
+          <PaginationControls
+            page={page}
+            totalCount={count}
+            pageSize={PAGE_SIZE}
+            searchParams={params as Record<string, string | undefined>}
+            basePath="/shopping/arts"
+          />
+        </>
       )}
     </div>
   )

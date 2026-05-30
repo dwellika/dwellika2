@@ -23,9 +23,9 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
     .filter(Boolean)
     .slice(0, 12)
   const socials = {
-    twitter: String(formData.get("twitter") ?? "").trim().replace(/^@/, ""),
-    instagram: String(formData.get("instagram") ?? "").trim().replace(/^@/, ""),
-    behance: String(formData.get("behance") ?? "").trim(),
+    pinterest:  String(formData.get("pinterest")  ?? "").trim(),
+    instagram:  String(formData.get("instagram")  ?? "").trim().replace(/^@/, ""),
+    behance:    String(formData.get("behance")    ?? "").trim(),
     artstation: String(formData.get("artstation") ?? "").trim(),
   }
 

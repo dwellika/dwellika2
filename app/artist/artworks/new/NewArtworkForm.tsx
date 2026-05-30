@@ -4,14 +4,57 @@ import { useState, useTransition } from "react"
 import { ImagePlus, Sparkles, X } from "lucide-react"
 import { toast } from "sonner"
 
+import { createArtwork } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 
-import { createArtwork } from "./actions"
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const ARTWORK_TYPES = [
+  { value: "2d_artwork",  label: "2D Artwork"  },
+  { value: "3d_artwork",  label: "3D Artwork"  },
+  { value: "home_decor",  label: "Home Decor"  },
+  { value: "wearing_art", label: "Wearing Art" },
+  { value: "other",       label: "Other"       },
+]
+
+const SIZES_2D = ["A1", "A2", "A3", "A4", "A5", "A6", "Custom"]
+
+const MEDIUMS_2D = [
+  "Oil", "Acrylic", "Watercolor", "Gouache", "Pastels", "Charcoal",
+  "Graphite", "Ink", "Crayons", "Fresco", "Digital", "Vector",
+  "Photography", "Mixed Media", "Other",
+]
+
+const STYLES_2D = [
+  "Realism", "Photorealism", "Impressionism", "Expressionism", "Abstract",
+  "Surrealism", "Cubism", "Pop Art", "Minimalism", "Art Nouveau",
+  "Cyberpunk", "Anime", "Other",
+]
+
+const SUBJECTS_2D = [
+  "Portrait", "Landscape", "Seascape", "Cityscape", "Still Life",
+  "Wildlife", "Botanical", "Historical", "Fantasy", "Abstract", "Other",
+]
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ReelOption {
+  id: string
+  caption: string | null
+  thumbnail_url: string | null
+}
 
 interface AiTags {
   medium?: string
@@ -21,40 +64,55 @@ interface AiTags {
   tags?: string[]
 }
 
-export function NewArtworkForm() {
-  const [files, setFiles] = useState<File[]>([])
-  const [forSale, setForSale] = useState(false)
-  const [submit, setSubmit] = useState(true)
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function NewArtworkForm({ reels }: { reels: ReelOption[] }) {
+  const [files, setFiles]       = useState<File[]>([])
+  const [artworkType, setArtworkType] = useState("2d_artwork")
+  const [size, setSize]         = useState("")
+  const [medium, setMedium]     = useState("")
+  const [style, setStyle]       = useState("")
+  const [subject, setSubject]   = useState("")
+  const [reelId, setReelId]     = useState("")
+  const [forSale, setForSale]   = useState(false)
+  const [submit, setSubmit]     = useState(true)
   const [pending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-  const [aiTags, setAiTags] = useState<AiTags | null>(null)
+  const [error, setError]       = useState<string | null>(null)
+  const [aiTags, setAiTags]     = useState<AiTags | null>(null)
   const [aiPending, setAiPending] = useState(false)
+
+  const is2D = artworkType === "2d_artwork"
+  const showCustomDims = !is2D || size === "Custom" || size === ""
 
   const previews = files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) }))
 
-  const runAiTagging = async () => {
+  function resetTypeFields() {
+    setMedium(""); setStyle(""); setSubject(""); setSize("")
+  }
+
+  async function runAiTagging() {
     if (!files[0]) return
     setAiPending(true)
     try {
-      // Upload to a data URL since we don't have a public URL yet; the AI tag
-      // endpoint accepts any HTTPS URL. We use base64 inline (OpenAI vision
-      // supports data URLs).
       const reader = new FileReader()
       reader.readAsDataURL(files[0])
       reader.onloadend = async () => {
         const dataUrl = reader.result as string
-        const res = await fetch("/api/ai/tag", {
+        const res  = await fetch("/api/ai/tag", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ imageUrl: dataUrl }),
         })
         const json = await res.json()
         setAiPending(false)
-        if (!res.ok || !json.ok) {
-          toast.error(json.error ?? "AI tagging failed")
-          return
+        if (!res.ok || !json.ok) { toast.error(json.error ?? "AI tagging failed"); return }
+        const tags = json.tags as AiTags
+        setAiTags(tags)
+        if (is2D) {
+          if (tags.medium  && MEDIUMS_2D.includes(tags.medium))   setMedium(tags.medium)
+          if (tags.style   && STYLES_2D.includes(tags.style))     setStyle(tags.style)
+          if (tags.subject && SUBJECTS_2D.includes(tags.subject)) setSubject(tags.subject)
         }
-        setAiTags(json.tags as AiTags)
         toast.success("AI suggested tags ready — review and apply.")
       }
     } catch (e) {
@@ -63,16 +121,19 @@ export function NewArtworkForm() {
     }
   }
 
-  const applyAiTags = () => {
+  function applyAiTags() {
     if (!aiTags) return
-    const setField = (name: string, value: string | undefined) => {
-      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`)
-      if (el && value) el.value = value
+    if (!is2D) {
+      const setField = (name: string, value: string | undefined) => {
+        const el = document.querySelector<HTMLInputElement>(`[name="${name}"]`)
+        if (el && value) el.value = value
+      }
+      setField("medium", aiTags.medium)
+      setField("style",  aiTags.style)
+      setField("subject", aiTags.subject)
     }
-    setField("medium", aiTags.medium)
-    setField("style", aiTags.style)
-    setField("subject", aiTags.subject)
-    setField("tags", (aiTags.tags ?? []).join(", "))
+    const tagsEl = document.querySelector<HTMLInputElement>(`[name="tags"]`)
+    if (tagsEl && aiTags.tags?.length) tagsEl.value = aiTags.tags.join(", ")
     toast.success("Applied AI tags")
   }
 
@@ -81,13 +142,20 @@ export function NewArtworkForm() {
       action={(fd) =>
         startTransition(async () => {
           setError(null)
-          for (const f of files) fd.append("media", f)
+          fd.set("artwork_type", artworkType)
+          fd.set("size",    size)
+          fd.set("reel_id", reelId === "none" ? "" : reelId)
           fd.set("for_sale", forSale ? "on" : "")
           fd.set("submit_for_review", submit ? "on" : "")
+          // Inject dropdown values for 2D
+          if (is2D) {
+            fd.set("medium",  medium)
+            fd.set("style",   style)
+            fd.set("subject", subject)
+          }
+          for (const f of files) fd.append("media", f)
           const result = await createArtwork(fd)
-          if (result && !("ok" in result && result.ok === false)) {
-            // redirected
-          } else if (result && result.ok === false) {
+          if (result?.ok === false) {
             setError(result.error)
             toast.error(result.error)
           }
@@ -95,10 +163,32 @@ export function NewArtworkForm() {
       }
       className="space-y-6"
     >
+      {/* ── Type selector ── */}
       <Card>
-        <CardHeader>
-          <CardTitle>Media</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Artwork type</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {ARTWORK_TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => { setArtworkType(t.value); resetTypeFields() }}
+                className={
+                  artworkType === t.value
+                    ? "rounded-full border border-primary bg-primary/15 px-4 py-1.5 text-sm font-medium text-primary"
+                    : "rounded-full border border-border bg-muted/30 px-4 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                }
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Media ── */}
+      <Card>
+        <CardHeader><CardTitle>Media</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <label className="block cursor-pointer rounded-2xl border-2 border-dashed border-border bg-muted/20 p-8 text-center transition-colors hover:bg-muted/40">
             <ImagePlus className="mx-auto size-8 text-muted-foreground" />
@@ -109,20 +199,16 @@ export function NewArtworkForm() {
               accept="image/png,image/jpeg,image/webp,image/avif"
               multiple
               className="hidden"
-              onChange={(e) => {
-                const next = Array.from(e.target.files ?? [])
-                setFiles((prev) => [...prev, ...next].slice(0, 6))
-              }}
+              onChange={(e) =>
+                setFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])].slice(0, 6))
+              }
             />
           </label>
 
-          {previews.length > 0 ? (
+          {previews.length > 0 && (
             <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
               {previews.map((p, i) => (
-                <div
-                  key={`${p.name}-${i}`}
-                  className="group relative aspect-square overflow-hidden rounded-lg border border-border"
-                >
+                <div key={`${p.name}-${i}`} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.url} alt={p.name} className="size-full object-cover" />
                   <button
@@ -133,63 +219,49 @@ export function NewArtworkForm() {
                   >
                     <X className="size-3" />
                   </button>
-                  {i === 0 ? (
+                  {i === 0 && (
                     <span className="absolute bottom-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
                       Primary
                     </span>
-                  ) : null}
+                  )}
                 </div>
               ))}
             </div>
-          ) : null}
+          )}
 
-          {files.length > 0 ? (
+          {files.length > 0 && (
             <div className="space-y-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={runAiTagging}
-                disabled={aiPending}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={runAiTagging} disabled={aiPending}>
                 <Sparkles className="size-4" />
                 {aiPending ? "Analyzing…" : "Suggest tags with AI"}
               </Button>
-              {aiTags ? (
+              {aiTags && (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs">
                   <div className="flex flex-wrap items-center gap-2">
-                    {aiTags.medium ? <Pill label={aiTags.medium} /> : null}
-                    {aiTags.style ? <Pill label={aiTags.style} /> : null}
-                    {aiTags.subject ? <Pill label={aiTags.subject} /> : null}
-                    {(aiTags.tags ?? []).map((t) => (
-                      <Pill key={t} label={t} />
-                    ))}
+                    {aiTags.medium  && <Pill label={aiTags.medium} />}
+                    {aiTags.style   && <Pill label={aiTags.style} />}
+                    {aiTags.subject && <Pill label={aiTags.subject} />}
+                    {(aiTags.tags ?? []).map((t) => <Pill key={t} label={t} />)}
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2"
-                    onClick={applyAiTags}
-                  >
+                  <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={applyAiTags}>
                     Apply suggestions
                   </Button>
                 </div>
-              ) : null}
+              )}
             </div>
-          ) : null}
+          )}
         </CardContent>
       </Card>
 
+      {/* ── Details ── */}
       <Card>
-        <CardHeader>
-          <CardTitle>Details</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Details</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
             <Input id="title" name="title" required maxLength={120} />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="description">Artist statement</Label>
             <Textarea
@@ -200,11 +272,82 @@ export function NewArtworkForm() {
               placeholder="What is this piece about? What materials did you use?"
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Field label="Medium" name="medium" placeholder="Watercolor, Oil…" />
-            <Field label="Style" name="style" placeholder="Abstract, Realism…" />
-            <Field label="Subject" name="subject" placeholder="Landscape, Portrait…" />
-          </div>
+
+          {is2D ? (
+            /* 2D: structured dropdowns */
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Size</Label>
+                  <Select value={size} onValueChange={setSize}>
+                    <SelectTrigger><SelectValue placeholder="Select size…" /></SelectTrigger>
+                    <SelectContent>
+                      {SIZES_2D.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Medium</Label>
+                  <Select value={medium} onValueChange={setMedium}>
+                    <SelectTrigger><SelectValue placeholder="Select medium…" /></SelectTrigger>
+                    <SelectContent>
+                      {MEDIUMS_2D.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Style</Label>
+                  <Select value={style} onValueChange={setStyle}>
+                    <SelectTrigger><SelectValue placeholder="Select style…" /></SelectTrigger>
+                    <SelectContent>
+                      {STYLES_2D.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Subject</Label>
+                  <Select value={subject} onValueChange={setSubject}>
+                    <SelectTrigger><SelectValue placeholder="Select subject…" /></SelectTrigger>
+                    <SelectContent>
+                      {SUBJECTS_2D.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {showCustomDims && (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <FreeField label="Width"  name="dim_width"  type="number" placeholder="30" />
+                  <FreeField label="Height" name="dim_height" type="number" placeholder="40" />
+                  <div className="space-y-2">
+                    <Label htmlFor="dim_unit">Unit</Label>
+                    <Input id="dim_unit" name="dim_unit" defaultValue="cm" />
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            /* 3D / Home Decor / Wearing Art / Other: free-text */
+            <>
+              <div className="grid gap-4 md:grid-cols-3">
+                <FreeField label="Medium"  name="medium"  placeholder="Clay, Bronze, Resin…" />
+                <FreeField label="Style"   name="style"   placeholder="Contemporary, Boho…"  />
+                <FreeField label="Subject" name="subject" placeholder="Abstract, Figurative…"/>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <FreeField label="Width"  name="dim_width"  type="number" placeholder="30" />
+                <FreeField label="Height" name="dim_height" type="number" placeholder="40" />
+                <div className="space-y-2">
+                  <Label htmlFor="dim_unit">Unit</Label>
+                  <Input id="dim_unit" name="dim_unit" defaultValue="cm" />
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="tags">Tags</Label>
             <Input
@@ -212,23 +355,41 @@ export function NewArtworkForm() {
               name="tags"
               placeholder="monsoon, blue, nature — comma separated"
             />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <Field label="Width" name="dim_width" type="number" placeholder="30" />
-            <Field label="Height" name="dim_height" type="number" placeholder="40" />
-            <div className="space-y-2">
-              <Label htmlFor="dim_unit">Unit</Label>
-              <Input id="dim_unit" name="dim_unit" defaultValue="cm" />
-            </div>
+            <p className="text-xs text-muted-foreground">Up to 12 tags.</p>
           </div>
         </CardContent>
       </Card>
 
+      {/* ── Reel attachment ── */}
+      {reels.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Attach a reel</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Link one of your approved reels so it plays on this artwork&apos;s page.
+            </p>
+            <Select value={reelId} onValueChange={setReelId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a reel (optional)…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No reel</SelectItem>
+                {reels.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.caption ? r.caption.slice(0, 60) : `Reel ${r.id.slice(0, 8)}…`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Listing ── */}
       <Card>
-        <CardHeader>
-          <CardTitle>Listing</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Listing</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -238,36 +399,30 @@ export function NewArtworkForm() {
             <Switch checked={forSale} onCheckedChange={setForSale} />
           </div>
 
-          {forSale ? (
-            <div className="grid gap-4 md:grid-cols-3">
-              <Field label="Price" name="price" type="number" required placeholder="12000" />
+          {forSale && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <FreeField label="Price" name="price" type="number" required placeholder="12000" />
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency</Label>
                 <Input id="currency" name="currency" defaultValue="INR" />
               </div>
-              <Field label="Edition size" name="edition_size" type="number" placeholder="1" />
             </div>
-          ) : null}
+          )}
 
           <div className="flex items-center gap-3">
             <Switch id="prints_available" name="prints_available" />
-            <Label htmlFor="prints_available" className="text-sm">
-              Offer prints
-            </Label>
+            <Label htmlFor="prints_available" className="text-sm">Offer prints</Label>
           </div>
           <div className="flex items-center gap-3">
             <Switch id="custom_size_option" name="custom_size_option" />
-            <Label htmlFor="custom_size_option" className="text-sm">
-              Allow custom-size commissions
-            </Label>
+            <Label htmlFor="custom_size_option" className="text-sm">Allow custom-size commissions</Label>
           </div>
 
           <div className="flex items-center justify-between border-t border-border pt-4">
             <div>
               <Label className="block">Submit for review</Label>
               <p className="text-xs text-muted-foreground">
-                Drafts stay private. Submitted pieces are reviewed by moderators
-                before appearing publicly.
+                Drafts stay private. Submitted pieces are reviewed before appearing publicly.
               </p>
             </div>
             <Switch checked={submit} onCheckedChange={setSubmit} />
@@ -275,11 +430,7 @@ export function NewArtworkForm() {
         </CardContent>
       </Card>
 
-      {error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
 
       <div className="flex justify-end gap-2">
         <Button type="submit" size="lg" disabled={pending || files.length === 0}>
@@ -290,18 +441,8 @@ export function NewArtworkForm() {
   )
 }
 
-function Field({
-  label,
-  name,
-  type = "text",
-  placeholder,
-  required,
-}: {
-  label: string
-  name: string
-  type?: string
-  placeholder?: string
-  required?: boolean
+function FreeField({ label, name, type = "text", placeholder, required }: {
+  label: string; name: string; type?: string; placeholder?: string; required?: boolean
 }) {
   return (
     <div className="space-y-2">

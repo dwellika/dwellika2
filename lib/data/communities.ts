@@ -14,40 +14,47 @@ export type CommunityPostRow = CommunityPost & {
   }>
 }
 
-export const listCommunities = unstable_cache(
-  async ({
-    q,
-    category,
-    limit = 24,
-    offset = 0,
-  }: {
-    q?: string
-    category?: string
-    limit?: number
-    offset?: number
-  } = {}) => {
-    const where = {
-      ...(category ? { category } : {}),
-      ...(q
-        ? {
-            OR: [
-              { name: { contains: q, mode: "insensitive" as const } },
-              { description: { contains: q, mode: "insensitive" as const } },
-            ],
-          }
-        : {}),
-    }
+type ListCommunitiesParams = {
+  q?: string
+  category?: string
+  limit?: number
+  offset?: number
+}
 
-    const [communities, count] = await prisma.$transaction([
-      prisma.community.findMany({ where, orderBy: { member_count: "desc" }, take: limit, skip: offset }),
-      prisma.community.count({ where }),
-    ])
+async function _listCommunitiesImpl({
+  q,
+  category,
+  limit = 24,
+  offset = 0,
+}: ListCommunitiesParams = {}) {
+  const where = {
+    ...(category ? { category } : {}),
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { description: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  }
 
-    return { communities, count }
-  },
-  ["list-communities"],
-  { revalidate: 300, tags: ["communities"] },
-)
+  const [communities, count] = await prisma.$transaction([
+    prisma.community.findMany({ where, orderBy: { member_count: "desc" }, take: limit, skip: offset }),
+    prisma.community.count({ where }),
+  ])
+
+  return { communities, count }
+}
+
+export function listCommunities(params: ListCommunitiesParams = {}) {
+  const key = JSON.stringify(params, Object.keys(params).sort())
+  return unstable_cache(
+    () => _listCommunitiesImpl(params),
+    ["list-communities", key],
+    { revalidate: 300, tags: ["communities"] },
+  )()
+}
 
 export async function getCommunityBySlug(slug: string) {
   return prisma.community.findUnique({ where: { slug } })

@@ -7,11 +7,20 @@ export const metadata = {
 
 export const revalidate = 60
 
-export default async function WearingArtsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; sort?: "newest" | "popular" | "price_asc" | "price_desc" | "rating"; minPrice?: string; maxPrice?: string }>
-}) {
+const WEARING_TAGS = ["Jewelry", "Clothing", "Textiles", "Accessories", "Bags", "Scarves"]
+
+interface PageProps {
+  searchParams: Promise<{
+    q?: string
+    tag?: string
+    sort?: "newest" | "popular" | "price_asc" | "price_desc" | "rating"
+    minPrice?: string
+    maxPrice?: string
+    page?: string
+  }>
+}
+
+export default async function WearingArtsPage({ searchParams }: PageProps) {
   const params = await searchParams
   return (
     <ProductCategoryPage
@@ -19,6 +28,8 @@ export default async function WearingArtsPage({
       title="Wearing Arts"
       eyebrow="Shop"
       description="Textiles, jewelry, hand-printed apparel — wearable craft."
+      basePath="/shopping/wearing-arts"
+      filters={[{ id: "tag", label: "Type", options: WEARING_TAGS }]}
       searchParams={params}
     />
   )

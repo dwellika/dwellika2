@@ -28,7 +28,7 @@ export default async function WorkshopsPage() {
   const pastOnly = past.filter((w) => new Date(w.ends_at).getTime() < Date.now())
 
   return (
-    <div className="container-page py-12">
+    <div className="container-page pb-12 pt-16 sm:pt-20">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.25em] text-primary">Learn</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">Workshops</h1>

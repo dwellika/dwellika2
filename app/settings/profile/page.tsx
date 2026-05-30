@@ -38,9 +38,9 @@ export default async function ProfileSettingsPage() {
     website: profile?.website ?? "",
     location: profile?.location ?? "",
     interests: (profile?.interests ?? []).join(", "),
-    twitter: socials.twitter ?? "",
-    instagram: socials.instagram ?? "",
-    behance: socials.behance ?? "",
+    pinterest:  socials.pinterest  ?? "",
+    instagram:  socials.instagram  ?? "",
+    behance:    socials.behance    ?? "",
     artstation: socials.artstation ?? "",
   }
 

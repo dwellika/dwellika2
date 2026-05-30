@@ -397,7 +397,6 @@ async function seedArtworks(users: Record<string, { id: string }>) {
         for_sale: true,
         price: 8500,
         currency: "INR",
-        edition_size: 50,
         status: ContentStatus.approved,
         tags: ["digital", "mythology", "cyberpunk", "goddess", "illustration"],
         view_count: 1120,

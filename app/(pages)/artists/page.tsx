@@ -1,8 +1,10 @@
+import Link from "next/link"
 import { Search } from "lucide-react"
 
 import { ArtistCard } from "@/components/artists/ArtistCard"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { getCurrentUser } from "@/lib/auth/rbac"
 import { listArtists } from "@/lib/data/artists"
 import { MOCK_ARTISTS } from "@/lib/mock/artists"
@@ -13,7 +15,7 @@ export const metadata = {
   description: "Discover the artists shaping Dwellika.",
 }
 
-export const revalidate = 120
+export const dynamic = "force-dynamic"
 
 const MEDIUMS = [
   "Watercolor",
@@ -30,23 +32,28 @@ const MEDIUMS = [
   "Mixed Media",
 ]
 
+const PAGE_SIZE = 24
+
 interface PageProps {
-  searchParams: Promise<{ q?: string; medium?: string }>
+  searchParams: Promise<{ q?: string; medium?: string; page?: string }>
 }
 
 export default async function ArtistsPage({ searchParams }: PageProps) {
-  const { q, medium } = await searchParams
+  const params = await searchParams
+  const { q, medium, page: pageStr } = params
+  const page = Math.max(1, Number(pageStr ?? 1) || 1)
+  const offset = (page - 1) * PAGE_SIZE
+
   const viewer = await getCurrentUser()
 
   const { artists, count } = await listArtists({
     q,
     mediums: medium ? [medium] : undefined,
-    limit: 24,
+    limit: PAGE_SIZE,
+    offset,
   })
 
-  // First-run friendliness: if there are no artists in DB yet,
-  // fall through to mock data so the page isn't empty.
-  const usingMock = artists.length === 0
+  const usingMock = artists.length === 0 && count === 0
   const display: ArtistCardRow[] = usingMock
     ? MOCK_ARTISTS.map((a) => ({
         id: a.id,
@@ -68,7 +75,7 @@ export default async function ArtistsPage({ searchParams }: PageProps) {
     : artists
 
   return (
-    <div className="container-page py-12">
+    <div className="container-page pb-12 pt-16 sm:pt-20">
       <header className="mb-10">
         <p className="text-xs uppercase tracking-[0.25em] text-primary">The collective</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">
@@ -80,7 +87,7 @@ export default async function ArtistsPage({ searchParams }: PageProps) {
         </p>
       </header>
 
-      {/* Search + filters */}
+      {/* Search + filters — plain GET form preserves all active params */}
       <form className="mb-8 flex flex-col gap-4">
         <div className="relative max-w-xl">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -91,8 +98,16 @@ export default async function ArtistsPage({ searchParams }: PageProps) {
             className="pl-9"
           />
         </div>
+        {/* Hidden input preserves the active medium when the search form is submitted */}
+        {medium && <input type="hidden" name="medium" value={medium} />}
+
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <FilterPill href="/artists" label="All" active={!medium} />
+          {/* "All" pill preserves any active search query */}
+          <FilterPill
+            href={q ? `/artists?q=${encodeURIComponent(q)}` : "/artists"}
+            label="All"
+            active={!medium}
+          />
           {MEDIUMS.map((m) => (
             <FilterPill
               key={m}
@@ -104,41 +119,42 @@ export default async function ArtistsPage({ searchParams }: PageProps) {
         </div>
       </form>
 
-      {/* Grid */}
       {display.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {display.map((a) => (
-            <ArtistCard
-              key={a.id}
-              artist={a}
-              isAuthed={Boolean(viewer)}
-            />
-          ))}
-        </div>
-      )}
+        <>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {display.map((a) => (
+              <ArtistCard
+                key={a.id}
+                artist={a}
+                isAuthed={Boolean(viewer)}
+              />
+            ))}
+          </div>
 
-      {usingMock ? (
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          Showing curated examples — no artists registered yet.
-        </p>
-      ) : null}
+          {usingMock ? (
+            <p className="mt-8 text-center text-xs text-muted-foreground">
+              Showing curated examples — no artists registered yet.
+            </p>
+          ) : (
+            <PaginationControls
+              page={page}
+              totalCount={count}
+              pageSize={PAGE_SIZE}
+              searchParams={params as Record<string, string | undefined>}
+              basePath="/artists"
+            />
+          )}
+        </>
+      )}
     </div>
   )
 }
 
-function FilterPill({
-  href,
-  label,
-  active,
-}: {
-  href: string
-  label: string
-  active: boolean
-}) {
+function FilterPill({ href, label, active }: { href: string; label: string; active: boolean }) {
   return (
-    <a
+    <Link
       href={href}
       className={
         active
@@ -147,7 +163,7 @@ function FilterPill({
       }
     >
       {label}
-    </a>
+    </Link>
   )
 }
 
@@ -159,7 +175,7 @@ function EmptyState() {
         Try clearing the filters or broadening your search.
       </p>
       <p className="mt-3">
-        <Badge variant="outline">tip: try “watercolor” or “digital”</Badge>
+        <Badge variant="outline">tip: try "watercolor" or "digital"</Badge>
       </p>
     </div>
   )

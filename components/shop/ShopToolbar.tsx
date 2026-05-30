@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { Filter, Search, SlidersHorizontal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
-import { useState } from "react"
 
 interface ShopToolbarProps {
   searchPlaceholder?: string
@@ -40,21 +39,40 @@ export function ShopToolbar({
   const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
-  const [pending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   const currentSort = params.get("sort") ?? sortOptions[0]?.value
   const currentQ = params.get("q") ?? ""
+
+  // Clears the page param so filter changes always land on page 1.
+  const navigate = (next: URLSearchParams) => {
+    next.delete("page")
+    startTransition(() => router.push(`${pathname}?${next.toString()}`))
+  }
 
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(params.toString())
     if (value && value.length > 0) next.set(key, value)
     else next.delete(key)
-    startTransition(() => router.push(`${pathname}?${next.toString()}`))
+    navigate(next)
   }
+
+  // Key for FilterSheet: changes whenever active filter/price params change,
+  // forcing a remount so the sheet re-reads fresh values from the URL.
+  const filterKey = [
+    ...(filters ?? []).map((f) => params.get(f.id) ?? ""),
+    params.get("minPrice") ?? "",
+    params.get("maxPrice") ?? "",
+  ].join("|")
 
   return (
     <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center">
+      {/*
+       * key={currentQ} remounts the form (and its uncontrolled Input) whenever
+       * the URL's `q` changes so the input reflects the current search text.
+       */}
       <form
+        key={currentQ}
         action={(fd) => setParam("q", String(fd.get("q") ?? ""))}
         className="relative flex-1"
       >
@@ -87,6 +105,7 @@ export function ShopToolbar({
 
         {(filters.length > 0 || priceRange) && (
           <FilterSheet
+            key={filterKey}
             filters={filters}
             priceRange={priceRange}
             params={params}
@@ -96,9 +115,8 @@ export function ShopToolbar({
                 if (v == null || v === "") next.delete(k)
                 else next.set(k, v)
               }
-              startTransition(() => router.push(`${pathname}?${next.toString()}`))
+              navigate(next)
             }}
-            pending={pending}
           />
         )}
       </div>
@@ -111,29 +129,56 @@ function FilterSheet({
   priceRange,
   params,
   onApply,
-  pending,
 }: {
   filters: ShopToolbarProps["filters"]
   priceRange?: { min: number; max: number }
   params: URLSearchParams
   onApply: (updates: Record<string, string | null>) => void
-  pending: boolean
 }) {
   const [open, setOpen] = useState(false)
-  const initialMin = Number(params.get("minPrice") ?? priceRange?.min ?? 0)
-  const initialMax = Number(params.get("maxPrice") ?? priceRange?.max ?? 50000)
-  const [price, setPrice] = useState<[number, number]>([initialMin, initialMax])
+
+  // Derive initial values from params (the component remounts via `key` when
+  // filter params change, so useState is always initialised from fresh params).
+  const [price, setPrice] = useState<[number, number]>([
+    Number(params.get("minPrice") ?? priceRange?.min ?? 0),
+    Number(params.get("maxPrice") ?? priceRange?.max ?? 50000),
+  ])
   const [picked, setPicked] = useState<Record<string, string | null>>(
     Object.fromEntries(
       (filters ?? []).map((f) => [f.id, params.get(f.id)]),
     ),
   )
 
+  // Safety net: if params change while the sheet is open, re-sync.
+  useEffect(() => {
+    setPicked(Object.fromEntries(
+      (filters ?? []).map((f) => [f.id, params.get(f.id)]),
+    ))
+    if (priceRange) {
+      setPrice([
+        Number(params.get("minPrice") ?? priceRange.min),
+        Number(params.get("maxPrice") ?? priceRange.max),
+      ])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.toString()])
+
+  // Count active non-default filters for badge
+  const activeCount =
+    (filters ?? []).filter((f) => params.get(f.id)).length +
+    (params.get("minPrice") ? 1 : 0) +
+    (params.get("maxPrice") ? 1 : 0)
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="relative">
           <Filter className="size-4" /> Filters
+          {activeCount > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {activeCount}
+            </span>
+          )}
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-80">
@@ -152,7 +197,7 @@ function FilterSheet({
                   className={
                     picked[f.id] == null
                       ? "rounded-full border border-primary bg-primary/15 px-3 py-1 text-xs text-primary"
-                      : "rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground"
+                      : "rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                   }
                 >
                   All
@@ -199,7 +244,6 @@ function FilterSheet({
           <div className="flex gap-2">
             <Button
               className="flex-1"
-              disabled={pending}
               onClick={() => {
                 onApply({
                   ...picked,

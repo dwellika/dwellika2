@@ -10,20 +10,21 @@ import {
   Trophy,
   Users,
   Users2,
+  BadgeCheck,
 } from "lucide-react"
 
 import { requireRole } from "@/lib/auth/rbac"
 
 const NAV = [
-  { href: "/admin", label: "Overview", Icon: Gauge },
-  { href: "/admin/analytics", label: "Analytics", Icon: BarChart3 },
-  { href: "/admin/moderation", label: "Moderation", Icon: ShieldCheck },
-  { href: "/admin/sellers", label: "Seller verification", Icon: ShoppingBag },
-  { href: "/admin/disputes", label: "Disputes", Icon: ShieldAlert },
-  { href: "/admin/orders", label: "Orders", Icon: ShoppingBag },
-  { href: "/admin/users", label: "Users", Icon: Users },
-  { href: "/admin/communities", label: "Communities", Icon: Users2 },
-  { href: "/admin/competitions", label: "Competitions", Icon: Trophy },
+  { href: "/admin",              label: "Overview",      Icon: Gauge       },
+  { href: "/admin/analytics",    label: "Analytics",     Icon: BarChart3   },
+  { href: "/admin/moderation",   label: "Moderation",    Icon: ShieldCheck },
+  { href: "/admin/verifications",label: "Verifications", Icon: BadgeCheck  },
+  { href: "/admin/disputes",     label: "Disputes",      Icon: ShieldAlert },
+  { href: "/admin/orders",       label: "Orders",        Icon: ShoppingBag },
+  { href: "/admin/users",        label: "Users",         Icon: Users       },
+  { href: "/admin/communities",  label: "Communities",   Icon: Users2      },
+  { href: "/admin/competitions", label: "Competitions",  Icon: Trophy      },
 ] as const
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

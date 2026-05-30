@@ -12,6 +12,8 @@ import { useCart } from "@/lib/data/cart"
 import type { ProductWithMedia } from "@/lib/data/types"
 import { cn } from "@/lib/utils"
 
+const LOW_STOCK_THRESHOLD = 10
+
 interface ProductCardProps {
   product: ProductWithMedia
   seller?: { id: string; username: string | null; full_name: string | null } | null
@@ -38,9 +40,19 @@ export function ProductCard({
     ? `/products/${seller.username}/${product.slug}`
     : `/products/${product.id}`
 
+  // Discount calculation
+  const discountPct = product.discount_pct ?? 0
+  const basePrice   = typeof product.price === "number" ? product.price : Number(product.price)
+  const effectivePrice = discountPct > 0 ? basePrice * (1 - discountPct / 100) : basePrice
+  const isLowStock = product.inventory > 0 && product.inventory < LOW_STOCK_THRESHOLD
+  const isSoldOut  = product.inventory === 0
+
   return (
     <article
-      className={cn("group overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-300 ease-out hover:-translate-y-1", className)}
+      className={cn(
+        "group overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-300 ease-out hover:-translate-y-1",
+        className,
+      )}
     >
       <Link href={href} className="block">
         <div className="relative aspect-square w-full overflow-hidden">
@@ -53,11 +65,25 @@ export function ProductCard({
             sizes="(max-width: 768px) 50vw, 33vw"
             className="object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          {product.inventory === 0 ? (
+
+          {/* Stock badges */}
+          {isSoldOut ? (
             <Badge variant="destructive" className="absolute left-3 top-3 backdrop-blur">
               Sold out
             </Badge>
+          ) : isLowStock ? (
+            <Badge className="absolute left-3 top-3 bg-amber-500/90 text-white backdrop-blur">
+              Only {product.inventory} left
+            </Badge>
           ) : null}
+
+          {/* Discount badge */}
+          {discountPct > 0 && !isSoldOut ? (
+            <Badge className="absolute right-3 top-3 bg-emerald-600 text-white">
+              -{discountPct}%
+            </Badge>
+          ) : null}
+
           <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
             <SaveButton
               targetKind="product"
@@ -77,9 +103,16 @@ export function ProductCard({
                 <p className="line-clamp-1 text-xs text-muted-foreground">by {sellerName}</p>
               ) : null}
             </div>
-            <p className="shrink-0 font-display text-base">
-              {formatPrice(product.price, product.currency)}
-            </p>
+            <div className="shrink-0 text-right">
+              {discountPct > 0 ? (
+                <>
+                  <p className="font-display text-base">{formatPrice(effectivePrice, product.currency)}</p>
+                  <p className="text-xs text-muted-foreground line-through">{formatPrice(basePrice, product.currency)}</p>
+                </>
+              ) : (
+                <p className="font-display text-base">{formatPrice(basePrice, product.currency)}</p>
+              )}
+            </div>
           </div>
 
           {product.rating_avg ? (
@@ -100,18 +133,18 @@ export function ProductCard({
             />
             <Button
               size="sm"
-              disabled={product.inventory === 0}
+              disabled={isSoldOut}
               onClick={(e) => {
                 e.preventDefault()
                 cart.add({
-                  kind: "product",
-                  id: product.id,
-                  slug: product.slug,
-                  title: product.title,
-                  image: image ?? "/placeholder.svg",
-                  unitPrice: Number(product.price),
-                  currency: product.currency,
-                  sellerId: product.seller_id,
+                  kind:      "product",
+                  id:        product.id,
+                  slug:      product.slug,
+                  title:     product.title,
+                  image:     image ?? "/placeholder.svg",
+                  unitPrice: effectivePrice,
+                  currency:  product.currency,
+                  sellerId:  product.seller_id,
                 })
                 toast.success(`Added to cart: ${product.title}`)
               }}
@@ -125,8 +158,7 @@ export function ProductCard({
   )
 }
 
-function formatPrice(price: number | { toNumber(): number; toString(): string }, currency: string) {
-  if (typeof price !== "number") price = price.toNumber()
+function formatPrice(price: number, currency: string) {
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(price)
   } catch {

@@ -1,20 +1,30 @@
+import { Suspense } from "react"
+
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { ProductCard } from "@/components/products/ProductCard"
 import { ShopToolbar } from "@/components/shop/ShopToolbar"
 import { getCurrentUser } from "@/lib/auth/rbac"
 import { listProducts } from "@/lib/data/products"
 import type { ProductCategory } from "@/lib/types/database"
 
+const PAGE_SIZE = 24
+
 interface ProductCategoryPageProps {
   category: ProductCategory
   title: string
   eyebrow: string
   description: string
+  /** Used by PaginationControls to build page-link URLs. */
+  basePath: string
   filters?: Array<{ id: string; label: string; options: string[] }>
   searchParams: {
     q?: string
+    /** Generic tag filter — matches any product whose `tags` array contains this value. */
+    tag?: string
     sort?: "newest" | "popular" | "price_asc" | "price_desc" | "rating"
     minPrice?: string
     maxPrice?: string
+    page?: string
   }
 }
 
@@ -31,23 +41,33 @@ export async function ProductCategoryPage({
   title,
   eyebrow,
   description,
+  basePath,
   filters = [],
   searchParams,
 }: ProductCategoryPageProps) {
-  const { q, sort = "newest", minPrice, maxPrice } = searchParams
+  const { q, tag, sort = "newest", minPrice, maxPrice, page: pageStr } = searchParams
+  const page = Math.max(1, Number(pageStr ?? 1) || 1)
+  const offset = (page - 1) * PAGE_SIZE
+
   const viewer = await getCurrentUser()
 
   const { products, count } = await listProducts({
     category,
     q,
+    tags: tag ? [tag] : undefined,
     sort,
     minPrice: minPrice ? Number(minPrice) : undefined,
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
-    limit: 32,
+    limit: PAGE_SIZE,
+    offset,
   })
 
+  // Build filter list: always include the tag filter if options are provided,
+  // plus any extra filters passed by the caller.
+  const allFilters = filters
+
   return (
-    <div className="container-page py-12">
+    <div className="container-page pb-12 pt-16 sm:pt-20">
       <header className="mb-6">
         <p className="text-xs uppercase tracking-[0.25em] text-primary">{eyebrow}</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">{title}</h1>
@@ -56,34 +76,46 @@ export async function ProductCategoryPage({
         </p>
       </header>
 
-      <ShopToolbar
-        searchPlaceholder={`Search ${title.toLowerCase()}…`}
-        sortOptions={SORTS}
-        filters={filters}
-        priceRange={{ min: 0, max: 50000 }}
-      />
+      <Suspense>
+        <ShopToolbar
+          searchPlaceholder={`Search ${title.toLowerCase()}…`}
+          sortOptions={SORTS}
+          filters={allFilters}
+          priceRange={{ min: 0, max: 50000 }}
+        />
+      </Suspense>
 
       {products.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-          {products.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              seller={
-                p.seller
-                  ? {
-                      id: p.seller_id,
-                      username: p.seller.username,
-                      full_name: p.seller.full_name,
-                    }
-                  : null
-              }
-              isAuthed={Boolean(viewer)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                seller={
+                  p.seller
+                    ? {
+                        id: p.seller_id,
+                        username: p.seller.username,
+                        full_name: p.seller.full_name,
+                      }
+                    : null
+                }
+                isAuthed={Boolean(viewer)}
+              />
+            ))}
+          </div>
+
+          <PaginationControls
+            page={page}
+            totalCount={count}
+            pageSize={PAGE_SIZE}
+            searchParams={searchParams as Record<string, string | undefined>}
+            basePath={basePath}
+          />
+        </>
       )}
     </div>
   )

@@ -13,7 +13,7 @@ import { Testimonials } from "@/components/home/Testimonials"
 import { listArtists } from "@/lib/data/artists"
 import type { MockArtist } from "@/lib/mock/artists"
 
-export const revalidate = 60
+export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
   // Live-data-with-fallback for Trending Artists. Other sections continue

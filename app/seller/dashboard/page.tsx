@@ -1,30 +1,112 @@
 import Link from "next/link"
+import { AlertTriangle, PackagePlus, PlusCircle } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SmartImage } from "@/components/ui/smart-image"
 import { requireRole } from "@/lib/auth/rbac"
 import { listSellerOrders } from "@/lib/data/orders"
+import { listSellerProducts } from "@/lib/data/products"
 
 export const metadata = { title: "Seller dashboard" }
 
+const LOW_STOCK = 10
+
 export default async function SellerDashboardPage() {
   const user = await requireRole("seller", "admin", "super_admin", "artist")
-  const orderItems = await listSellerOrders(user.id)
 
-  const revenue = orderItems.reduce((s, oi) => s + Number(oi.subtotal ?? 0), 0)
+  const [orderItems, products] = await Promise.all([
+    listSellerOrders(user.id),
+    listSellerProducts(user.id),
+  ])
+
+  const revenue    = orderItems.reduce((s, oi) => s + Number(oi.subtotal ?? 0), 0)
   const orderCount = new Set(orderItems.map((oi) => oi.order_id)).size
 
-  return (
-    <div className="container-page py-12">
-      <h1 className="mb-8 font-display text-4xl">Seller dashboard</h1>
+  const activeProducts  = products.filter((p) => p.status === "approved").length
+  const pendingProducts = products.filter((p) => p.status === "pending").length
+  const lowStockCount   = products.filter((p) => p.inventory > 0 && p.inventory < LOW_STOCK).length
 
-      <div className="mb-8 grid gap-4 md:grid-cols-3">
-        <Stat label="Orders" value={orderCount.toString()} />
-        <Stat label="Revenue" value={`₹${revenue.toLocaleString()}`} />
+  return (
+    <div className="container-page pb-16 pt-16 sm:pt-20">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="font-display text-4xl">Seller dashboard</h1>
+        <Button asChild>
+          <Link href="/seller/products/new">
+            <PlusCircle className="size-4" /> Add Item / Art Supply
+          </Link>
+        </Button>
+      </div>
+
+      {/* Low-stock alert */}
+      {lowStockCount > 0 && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+          <AlertTriangle className="size-5 shrink-0" />
+          <span>
+            <strong>{lowStockCount}</strong> product{lowStockCount > 1 ? "s are" : " is"} low on stock.{" "}
+            <Link href="/seller/products?tab=low" className="underline underline-offset-2">
+              Update inventory →
+            </Link>
+          </span>
+        </div>
+      )}
+
+      {/* Sales stats */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <Stat label="Orders"     value={orderCount.toString()} />
+        <Stat label="Revenue"    value={`₹${revenue.toLocaleString()}`} />
         <Stat label="Items sold" value={String(orderItems.reduce((s, oi) => s + oi.quantity, 0))} />
       </div>
 
+      {/* Product overview */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        <Link href="/seller/products?tab=approved" className="group">
+          <Card className="transition-all group-hover:border-primary/40">
+            <CardContent className="p-5">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">Live products</p>
+              <p className="mt-1 font-display text-3xl tabular-nums text-emerald-400">{activeProducts}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/seller/products?tab=pending" className="group">
+          <Card className="transition-all group-hover:border-primary/40">
+            <CardContent className="p-5">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">Under review</p>
+              <p className="mt-1 font-display text-3xl tabular-nums text-blue-400">{pendingProducts}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/seller/products?tab=low" className="group">
+          <Card className="transition-all group-hover:border-primary/40">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">Low stock</p>
+                {lowStockCount > 0 && <AlertTriangle className="size-4 text-amber-400" />}
+              </div>
+              <p className={`mt-1 font-display text-3xl tabular-nums ${lowStockCount > 0 ? "text-amber-400" : ""}`}>
+                {lowStockCount}
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Quick actions */}
+      <div className="mb-8 flex flex-wrap gap-3">
+        <Button asChild variant="outline">
+          <Link href="/seller/products">
+            <PackagePlus className="size-4" /> Manage products
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/seller/products/new">
+            <PlusCircle className="size-4" /> Add Item / Art Supply
+          </Link>
+        </Button>
+      </div>
+
+      {/* Recent orders */}
       <Card>
         <CardHeader>
           <CardTitle>Recent orders</CardTitle>

@@ -121,7 +121,7 @@ export async function listReels({
 
   // Preserve order from `ids` array when provided
   if (ids) {
-    const map = new Map(rows.map((r) => [r.id, r]))
+    const map = new Map(rows.map((r: any) => [r.id, r]))
     return ids.map((id) => map.get(id)).filter(Boolean) as ReelWithCreator[]
   }
 

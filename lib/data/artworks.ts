@@ -18,11 +18,18 @@ export interface ArtworkListParams {
   status?: "approved" | "pending" | "draft" | "all"
 }
 
-export const listArtworks = unstable_cache(
-  async (params: ArtworkListParams = {}) => _listArtworksImpl(params),
-  ["list-artworks"],
-  { revalidate: 60, tags: ["artworks"] },
-)
+/**
+ * Each unique params object gets its own cache entry.
+ * We include a stable JSON key so undefined-vs-absent keys don't collide.
+ */
+export function listArtworks(params: ArtworkListParams = {}) {
+  const key = JSON.stringify(params, Object.keys(params).sort())
+  return unstable_cache(
+    () => _listArtworksImpl(params),
+    ["list-artworks", key],
+    { revalidate: 60, tags: ["artworks"] },
+  )()
+}
 
 async function _listArtworksImpl({
   q,

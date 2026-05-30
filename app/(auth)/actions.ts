@@ -27,7 +27,7 @@ export async function signInWithPassword(formData: FormData): Promise<ActionResu
     throw e
   }
 
-  redirect(next || "/")
+  return { ok: true }
 }
 
 export async function signUpWithPassword(formData: FormData): Promise<ActionResult> {

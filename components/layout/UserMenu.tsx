@@ -2,9 +2,9 @@
 
 import Link from "next/link"
 import { LogOut, MessageSquare, Settings, ShieldAlert, ShoppingBag, Heart, User2, UserCircle2 } from "lucide-react"
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useState } from "react"
+import { signOut } from "next-auth/react"
 
-import { signOutAction as signOut } from "@/app/(auth)/actions"
 import { useUser } from "@/lib/auth/use-user"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,6 @@ import type { UserLevel } from "@/lib/types/database"
 
 export function UserMenu() {
   const { user, loading } = useUser()
-  const [pending, startTransition] = useTransition()
   const [level, setLevel] = useState<{ level: UserLevel; xp: number } | null>(null)
 
   useEffect(() => {
@@ -31,7 +30,7 @@ export function UserMenu() {
       .then((data: { level: UserLevel; xp: number } | null) => {
         if (data) setLevel(data)
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [user])
 
   if (loading) {
@@ -48,8 +47,8 @@ export function UserMenu() {
           </Link>
         </Button>
 
-        {/* sm and up: full text buttons */}
-        <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+        {/* md and up: full text buttons */}
+        <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex">
           <Link href="/signin">Sign in</Link>
         </Button>
         <Button size="sm" asChild className="hidden sm:inline-flex">
@@ -143,12 +142,9 @@ export function UserMenu() {
         ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          disabled={pending}
           onSelect={(e) => {
             e.preventDefault()
-            startTransition(async () => {
-              await signOut()
-            })
+            signOut({ callbackUrl: "/" })
           }}
         >
           <LogOut className="size-4" /> Sign out

@@ -88,7 +88,6 @@ export interface ArtworkRow {
   for_sale: boolean
   price: DecimalValue | null
   currency: string
-  edition_size: number | null
   status: ContentStatus
   ai_tags: Json
   tags: string[]
@@ -120,6 +119,7 @@ export interface ProductRow {
   price: DecimalValue
   currency: string
   inventory: number
+  discount_pct: number
   sku: string | null
   tags: string[]
   attributes: Json

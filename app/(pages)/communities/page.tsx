@@ -2,9 +2,12 @@ import Link from "next/link"
 import { Search } from "lucide-react"
 
 import { CommunityCard } from "@/components/communities/CommunityCard"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { listCommunities } from "@/lib/data/communities"
 
+export const dynamic = "force-dynamic"
 export const metadata = {
   title: "Communities",
   description: "Studios, schools of thought, and craft groups across Dwellika.",
@@ -21,19 +24,27 @@ const CATEGORIES = [
   "Mixed Media",
 ]
 
+const PAGE_SIZE = 24
+
 interface PageProps {
-  searchParams: Promise<{ q?: string; category?: string }>
+  searchParams: Promise<{ q?: string; category?: string; page?: string }>
 }
 
 export default async function CommunitiesPage({ searchParams }: PageProps) {
-  const { q, category } = await searchParams
-  const { communities, count } = await listCommunities({ q, category, limit: 30 }).catch(() => ({
-    communities: [],
-    count: 0,
-  }))
+  const params = await searchParams
+  const { q, category, page: pageStr } = params
+  const page = Math.max(1, Number(pageStr ?? 1) || 1)
+  const offset = (page - 1) * PAGE_SIZE
+
+  const { communities, count } = await listCommunities({
+    q,
+    category,
+    limit: PAGE_SIZE,
+    offset,
+  }).catch(() => ({ communities: [], count: 0 }))
 
   return (
-    <div className="container-page py-12">
+    <div className="container-page pb-12 pt-16 sm:pt-20">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.25em] text-primary">Communities</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">
@@ -45,13 +56,28 @@ export default async function CommunitiesPage({ searchParams }: PageProps) {
         </p>
       </header>
 
+      {/* Plain GET form: browser navigates to /communities?q=...&category=... */}
       <form className="mb-8 space-y-4">
-        <div className="relative max-w-xl">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input name="q" defaultValue={q ?? ""} placeholder="Search communities…" className="pl-9" />
+        <div className="relative flex max-w-xl gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input name="q" defaultValue={q ?? ""} placeholder="Search communities…" className="pl-9" />
+          </div>
+          <Button type="submit" variant="outline" size="icon" aria-label="Search">
+            <Search className="size-4" />
+          </Button>
         </div>
+
+        {/* Preserve active category when the search form is submitted */}
+        {category && <input type="hidden" name="category" value={category} />}
+
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <Pill href="/communities" label="All" active={!category} />
+          {/* "All" pill preserves any active search query */}
+          <Pill
+            href={q ? `/communities?q=${encodeURIComponent(q)}` : "/communities"}
+            label="All"
+            active={!category}
+          />
           {CATEGORIES.map((c) => (
             <Pill
               key={c}
@@ -66,11 +92,21 @@ export default async function CommunitiesPage({ searchParams }: PageProps) {
       {communities.length === 0 ? (
         <Empty />
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {communities.map((c) => (
-            <CommunityCard key={c.id} community={c} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {communities.map((c) => (
+              <CommunityCard key={c.id} community={c} />
+            ))}
+          </div>
+
+          <PaginationControls
+            page={page}
+            totalCount={count}
+            pageSize={PAGE_SIZE}
+            searchParams={params as Record<string, string | undefined>}
+            basePath="/communities"
+          />
+        </>
       )}
     </div>
   )

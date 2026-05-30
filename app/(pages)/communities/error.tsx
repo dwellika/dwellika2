@@ -28,6 +28,7 @@ export default function Error({
         message="The communities feed is temporarily unavailable. Try again or browse artists instead."
         retry={reset}
         className="min-h-[40vh]"
+
       />
       <div className="mt-6 flex justify-center gap-3">
         <Button asChild variant="outline">

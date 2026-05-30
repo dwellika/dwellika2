@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next"
 
 import { prisma } from "@/lib/prisma"
 
+// Force runtime generation so Prisma queries run on request, not during
+// `next build` when the Railway database is unreachable.
+export const dynamic = "force-dynamic"
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 
 const STATIC_PATHS: Array<[string, number]> = [

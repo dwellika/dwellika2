@@ -42,11 +42,11 @@ export async function listProducts({
     ...(typeof minRating === "number" ? { rating_avg: { gte: minRating } } : {}),
     ...(q
       ? {
-          OR: [
-            { title: { contains: q, mode: "insensitive" as const } },
-            { description: { contains: q, mode: "insensitive" as const } },
-          ],
-        }
+        OR: [
+          { title: { contains: q, mode: "insensitive" as const } },
+          { description: { contains: q, mode: "insensitive" as const } },
+        ],
+      }
       : {}),
   }
 
@@ -92,4 +92,40 @@ export async function getProductBySlug(sellerUsername: string, slug: string) {
   if (!product) return null
 
   return { ...product, seller }
+}
+
+// ─── Seller-side helpers ──────────────────────────────────────────────────────
+
+export async function listSellerProducts(sellerId: string) {
+  return prisma.product.findMany({
+    where: { seller_id: sellerId },
+    include: { product_media: { where: { is_primary: true }, take: 1 } },
+    orderBy: { created_at: "desc" },
+  })
+}
+
+export async function updateProductInventory(
+  productId: string,
+  sellerId: string,
+  inventory: number,
+) {
+  if (inventory < 0) throw new Error("Inventory cannot be negative.")
+  return prisma.product.update({
+    where: { id: productId, seller_id: sellerId },
+    data: { inventory },
+  })
+}
+
+export async function submitProductForReview(productId: string, sellerId: string) {
+  return prisma.product.update({
+    where: { id: productId, seller_id: sellerId, status: { in: ["draft", "rejected"] } },
+    data: { status: "pending" },
+  })
+}
+
+export async function deleteSellerProduct(productId: string, sellerId: string) {
+  // Only allow deletion of non-approved products
+  return prisma.product.delete({
+    where: { id: productId, seller_id: sellerId, status: { in: ["draft", "rejected"] } },
+  })
 }

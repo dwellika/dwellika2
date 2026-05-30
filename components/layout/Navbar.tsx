@@ -86,21 +86,21 @@ export function Navbar() {
             <Search className="size-[18px]" />
           </Button>
 
-          {/* Wishlist — sm and up */}
+          {/* Wishlist — md and up */}
           <Button
             variant="ghost"
             size="icon"
             asChild
             aria-label="Wishlist"
-            className="hidden size-9 sm:inline-flex"
+            className="hidden size-9 md:inline-flex"
           >
             <Link href="/wishlist">
               <Heart className="size-[18px]" />
             </Link>
           </Button>
 
-          {/* Theme toggle — sm and up */}
-          <ModeToggle className="relative hidden size-9 sm:inline-flex" />
+          {/* Theme toggle — md and up */}
+          <ModeToggle className="relative hidden size-9 md:inline-flex" />
 
           {/* Notification bell — md and up (handled inside component too) */}
           <NotificationBell />

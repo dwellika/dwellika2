@@ -10,45 +10,47 @@ import { VerifyForm } from "./VerifyForm"
 export const metadata = { title: "Seller verification" }
 
 export default async function VerifyPage() {
-  const user = await requireAuth()
+  const user = await requireAuth("/signin?next=/sellers/verify")
 
   const [sellerProfile, docs] = await Promise.all([
     prisma.sellerProfile.findUnique({
-      where: { id: user.id },
+      where:  { id: user.id },
       select: {
         business_name: true,
-        legal_name: true,
-        gst_number: true,
-        pan_number: true,
-        is_verified: true,
-        address: true,
-        bank_details: true,
+        legal_name:    true,
+        gst_number:    true,
+        pan_number:    true,
+        is_verified:   true,
+        address:       true,
+        shop_address:  true,
+        bank_details:  true,
+        mobile:        true,
+        website:       true,
+        socials:       true,
       },
     }),
     prisma.sellerVerificationDoc.findMany({
-      where: { seller_id: user.id },
-      select: { id: true, doc_kind: true, status: true, notes: true, created_at: true, reviewed_at: true },
+      where:   { seller_id: user.id },
+      select:  { id: true, doc_kind: true, status: true, notes: true, created_at: true, reviewed_at: true },
       orderBy: { created_at: "desc" },
     }),
   ])
 
-  const sp = sellerProfile as {
-    business_name: string
-    legal_name: string | null
-    gst_number: string | null
-    pan_number: string | null
-    is_verified: boolean
-    address: Record<string, string | null> | null
-    bank_details: Record<string, string | null> | null
-  } | null
-
-  if (sp?.is_verified) {
+  if (sellerProfile?.is_verified) {
     redirect("/seller/dashboard?verified=1")
   }
 
+  type JsonObj = Record<string, string | null>
+  const sp = sellerProfile as typeof sellerProfile & {
+    address:      JsonObj | null
+    shop_address: JsonObj | null
+    bank_details: JsonObj | null
+    socials:      JsonObj | null
+  } | null
+
   const verificationDocs = docs.map((d) => ({
     ...d,
-    created_at: d.created_at.toISOString(),
+    created_at:  d.created_at.toISOString(),
     reviewed_at: d.reviewed_at?.toISOString() ?? null,
   }))
 
@@ -58,7 +60,7 @@ export default async function VerifyPage() {
   }
 
   return (
-    <div className="container-page py-12">
+    <div className="container-page pb-12 pt-16 sm:pt-20">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.25em] text-primary">Become a verified seller</p>
         <h1 className="font-display text-4xl">Seller verification</h1>
@@ -68,34 +70,54 @@ export default async function VerifyPage() {
         </p>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <Card>
           <CardHeader>
             <CardTitle>Business & documents</CardTitle>
             <CardDescription>
               Required: PAN, Aadhaar, and address proof. GST and bank details
-              required only for sellers turnover &gt; ₹40L/year.
+              required only for sellers with turnover &gt; ₹40L/year.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <VerifyForm
               defaults={{
+                full_name:    user.full_name ?? "",
+                email:        user.email ?? "",
+                username:     user.username ?? "",
+                mobile:       sp?.mobile ?? "",
                 business_name: sp?.business_name ?? "",
-                legal_name: sp?.legal_name ?? "",
-                gst_number: sp?.gst_number ?? "",
-                pan_number: sp?.pan_number ?? "",
+                legal_name:   sp?.legal_name ?? "",
+                gst_number:   sp?.gst_number ?? "",
+                pan_number:   sp?.pan_number ?? "",
+                website:      sp?.website ?? "",
+                socials: {
+                  instagram:  String(sp?.socials?.instagram ?? ""),
+                  twitter:    String(sp?.socials?.twitter ?? ""),
+                  facebook:   String(sp?.socials?.facebook ?? ""),
+                  youtube:    String(sp?.socials?.youtube ?? ""),
+                  linkedin:   String(sp?.socials?.linkedin ?? ""),
+                },
                 address: {
-                  line1: String(sp?.address?.line1 ?? ""),
-                  line2: String(sp?.address?.line2 ?? ""),
-                  city: String(sp?.address?.city ?? ""),
-                  state: String(sp?.address?.state ?? ""),
+                  line1:       String(sp?.address?.line1 ?? ""),
+                  line2:       String(sp?.address?.line2 ?? ""),
+                  city:        String(sp?.address?.city ?? ""),
+                  state:       String(sp?.address?.state ?? ""),
                   postal_code: String(sp?.address?.postal_code ?? ""),
-                  country: String(sp?.address?.country ?? "IN"),
+                  country:     String(sp?.address?.country ?? "IN"),
+                },
+                shop_address: {
+                  line1:       String(sp?.shop_address?.line1 ?? ""),
+                  line2:       String(sp?.shop_address?.line2 ?? ""),
+                  city:        String(sp?.shop_address?.city ?? ""),
+                  state:       String(sp?.shop_address?.state ?? ""),
+                  postal_code: String(sp?.shop_address?.postal_code ?? ""),
+                  country:     String(sp?.shop_address?.country ?? "IN"),
                 },
                 bank: {
                   account_holder: String(sp?.bank_details?.account_holder ?? ""),
                   account_number: String(sp?.bank_details?.account_number ?? ""),
-                  ifsc: String(sp?.bank_details?.ifsc ?? ""),
+                  ifsc:           String(sp?.bank_details?.ifsc ?? ""),
                 },
               }}
               docsState={Array.from(latestByKind.values())}

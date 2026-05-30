@@ -5,12 +5,32 @@ import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth/config"
 import { prisma } from "@/lib/prisma"
 
-type Surface = "artworks" | "reels" | "community_posts" | "competition_submissions"
-type Decision = "approved" | "rejected" | "hidden"
+export type Surface =
+  | "artworks"
+  | "reels"
+  | "community_posts"
+  | "competition_submissions"
+  | "products"
+
+export type Decision = "approved" | "rejected" | "hidden" | "deleted"
 
 type ActionResult = { ok: true } | { ok: false; error: string }
 
-const SURFACES: Surface[] = ["artworks", "reels", "community_posts", "competition_submissions"]
+const SURFACES: Surface[] = [
+  "artworks",
+  "reels",
+  "community_posts",
+  "competition_submissions",
+  "products",
+]
+
+const MODEL_MAP: Record<Surface, string> = {
+  artworks:                "artwork",
+  reels:                   "reel",
+  community_posts:         "communityPost",
+  competition_submissions: "competitionSubmission",
+  products:                "product",
+}
 
 async function requireAdmin() {
   const session = await auth()
@@ -30,24 +50,32 @@ export async function moderate(
     if (!SURFACES.includes(surface)) return { ok: false, error: "Invalid surface." }
     if (ids.length === 0) return { ok: false, error: "Select at least one item." }
     if (decision !== "approved" && !notes.trim()) {
-      return { ok: false, error: "Notes are required when rejecting or hiding." }
+      return { ok: false, error: "Notes are required when rejecting, hiding, or deleting." }
     }
 
     const adminId = await requireAdmin()
     if (!adminId) return { ok: false, error: "Admins only." }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const modelName = { artworks: "artwork", reels: "reel", community_posts: "communityPost", competition_submissions: "competitionSubmission" }[surface]
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma as any)[modelName!].updateMany({ where: { id: { in: ids } }, data: { status: decision } })
+    const modelName = MODEL_MAP[surface]
+
+    if (decision === "deleted") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (prisma as any)[modelName].deleteMany({ where: { id: { in: ids } } })
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (prisma as any)[modelName].updateMany({
+        where: { id: { in: ids } },
+        data:  { status: decision },
+      })
+    }
 
     await prisma.moderationLog.createMany({
       data: ids.map((id) => ({
-        admin_id: adminId,
-        action: `moderate:${decision}`,
+        admin_id:    adminId,
+        action:      `moderate:${decision}`,
         target_kind: surface,
-        target_id: id,
-        notes: notes || null,
+        target_id:   id,
+        notes:       notes || null,
       })),
     })
 

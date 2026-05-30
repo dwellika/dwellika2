@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion, useReducedMotion } from "framer-motion"
 import { BadgeCheck, MapPin } from "lucide-react"
 
@@ -29,6 +30,7 @@ export function ArtistCard({
   const ref = useRef<HTMLDivElement>(null)
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const prefersReducedMotion = useReducedMotion()
+  const router = useRouter()
 
   const onMove = (e: React.MouseEvent) => {
     if (prefersReducedMotion) return
@@ -55,11 +57,12 @@ export function ArtistCard({
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={() => setTilt({ rx: 0, ry: 0 })}
+      onClick={() => { if (artist.username) router.push(`/u/${artist.username}`) }}
       style={{
         transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
         transition: "transform 0.4s var(--ease-art)",
       }}
-      className="group relative h-[360px] overflow-hidden rounded-3xl border border-border bg-card shadow-xl"
+      className="group relative h-[360px] cursor-pointer overflow-hidden rounded-3xl border border-border bg-card shadow-xl"
     >
       <SmartImage
         src={cover}
@@ -126,13 +129,15 @@ export function ArtistCard({
           </div>
         </div>
 
-        <FollowButton
-          targetUserId={artist.id}
-          initial={isFollowing}
-          isAuthed={isAuthed}
-          size="sm"
-          className="opacity-0 transition-opacity group-hover:opacity-100"
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <FollowButton
+            targetUserId={artist.id}
+            initial={isFollowing}
+            isAuthed={isAuthed}
+            size="sm"
+            className="opacity-0 transition-opacity group-hover:opacity-100"
+          />
+        </div>
       </div>
     </motion.article>
   )

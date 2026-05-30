@@ -607,7 +607,7 @@ function ReelItem({
         ))}
 
         {/* Right side action buttons */}
-        <div className="absolute bottom-32 right-3 flex flex-col items-center gap-4 md:bottom-28" style={{ bottom: "max(8rem, calc(6rem + env(safe-area-inset-bottom, 0px)))" }}>
+        <div className="absolute right-3 flex flex-col items-center gap-4" style={{ bottom: "max(12rem, calc(10rem + env(safe-area-inset-bottom, 0px)))" }}>
           {/* Like */}
           <div className="flex flex-col items-center gap-0.5">
             <button

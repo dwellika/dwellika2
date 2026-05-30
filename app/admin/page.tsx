@@ -10,6 +10,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = "force-dynamic"
 export const metadata = { title: "Admin overview" }
 
 async function counts() {
@@ -18,9 +19,12 @@ async function counts() {
     pendingReels,
     pendingPosts,
     pendingSubs,
+    pendingProducts,
     openDisputes,
     pendingSellers,
+    pendingArtistVerifs,
     totalUsers,
+    suspendedUsers,
     totalOrders,
     last24Orders,
   ] = await Promise.all([
@@ -28,19 +32,23 @@ async function counts() {
     prisma.reel.count({ where: { status: "pending" } }),
     prisma.communityPost.count({ where: { status: "pending" } }),
     prisma.competitionSubmission.count({ where: { status: "pending" } }),
+    prisma.product.count({ where: { status: "pending" } }),
     prisma.dispute.count({ where: { status: { in: ["open", "reviewing"] } } }),
     prisma.sellerVerificationDoc.count({ where: { status: "pending" } }),
+    prisma.artistVerification.count({ where: { status: { in: ["submitted", "under_review"] } } }),
     prisma.user.count(),
+    prisma.user.count({ where: { suspended_until: { gt: new Date() } } }),
     prisma.order.count(),
     prisma.order.count({
       where: { created_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     }),
   ])
   return {
-    pendingModeration: pendingArtworks + pendingReels + pendingPosts + pendingSubs,
+    pendingModeration: pendingArtworks + pendingReels + pendingPosts + pendingSubs + pendingProducts,
     openDisputes,
-    pendingSellers,
+    pendingVerifications: pendingSellers + pendingArtistVerifs,
     totalUsers,
+    suspendedUsers,
     totalOrders,
     last24Orders,
   }
@@ -59,12 +67,12 @@ export default async function AdminOverview() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Tile href="/admin/moderation" label="Pending moderation" value={c.pendingModeration} Icon={ShieldCheck} />
-        <Tile href="/admin/disputes" label="Open disputes" value={c.openDisputes} Icon={ShieldAlert} />
-        <Tile href="/admin/sellers" label="Seller verifications" value={c.pendingSellers} Icon={ShoppingBag} />
-        <Tile href="/admin/users" label="Total users" value={c.totalUsers} Icon={Users} />
-        <Tile href="/admin/orders" label="Total orders" value={c.totalOrders} Icon={ShoppingBag} />
-        <Tile href="/admin/orders" label="Orders (24h)" value={c.last24Orders} Icon={ShoppingBag} />
+        <Tile href="/admin/moderation"     label="Pending moderation"  value={c.pendingModeration}    Icon={ShieldCheck} />
+        <Tile href="/admin/verifications"  label="Pending verifications" value={c.pendingVerifications} Icon={ShoppingBag} />
+        <Tile href="/admin/disputes"       label="Open disputes"        value={c.openDisputes}          Icon={ShieldAlert} />
+        <Tile href="/admin/users"          label="Total users"          value={c.totalUsers}            Icon={Users} />
+        <Tile href="/admin/users?tab=all"  label="Suspended users"      value={c.suspendedUsers}        Icon={Users} />
+        <Tile href="/admin/orders"         label="Orders (24h)"         value={c.last24Orders}          Icon={ShoppingBag} />
       </div>
     </div>
   )

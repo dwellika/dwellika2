@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 
 import { signInWithPassword } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label"
 export function SignInForm({ next = "/" }: { next?: string }) {
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const router = useRouter()
 
   return (
     <form
@@ -20,7 +22,12 @@ export function SignInForm({ next = "/" }: { next?: string }) {
           setError(null)
           fd.set("next", next)
           const result = await signInWithPassword(fd)
-          if (result && !result.ok) setError(result.error)
+          if (!result.ok) {
+            setError(result.error)
+          } else {
+            router.push(next)
+            router.refresh()
+          }
         })
       }
       className="space-y-4"

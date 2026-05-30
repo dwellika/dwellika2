@@ -113,19 +113,6 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
   const tier = (profile as { artist_profiles?: { tier?: ArtistTier } | null }).artist_profiles?.tier
   const joinedYear = new Date(profile.created_at).getFullYear()
 
-  // Narrow Prisma's JsonValue to the expected socials shape
-  const socials = (
-    profile.socials && typeof profile.socials === "object" && !Array.isArray(profile.socials)
-      ? profile.socials
-      : {}
-  ) as { twitter?: string; instagram?: string; behance?: string; artstation?: string }
-
-  // Convert awarded_at Date → string to match BadgeGrid's expected prop type
-  const badgeRows = badges.map((b) => ({
-    badge: b.badge,
-    awarded_at: b.awarded_at.toISOString(),
-  }))
-
   const initials =
     profile.full_name
       ?.split(" ")
@@ -229,7 +216,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                 <p className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
                   Badges
                 </p>
-                <BadgeGrid badges={badgeRows} />
+                <BadgeGrid badges={badges} />
               </div>
             ) : null}
 
@@ -251,24 +238,24 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
                   <Globe className="size-4" /> {prettyUrl(profile.website)}
                 </a>
               ) : null}
-              {socials.twitter ? (
+              {profile.socials?.twitter ? (
                 <a
-                  href={`https://twitter.com/${socials.twitter}`}
+                  href={`https://twitter.com/${profile.socials.twitter}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
                 >
-                  <Twitter className="size-4" /> @{socials.twitter}
+                  <Twitter className="size-4" /> @{profile.socials.twitter}
                 </a>
               ) : null}
-              {socials.instagram ? (
+              {profile.socials?.instagram ? (
                 <a
-                  href={`https://instagram.com/${socials.instagram}`}
+                  href={`https://instagram.com/${profile.socials.instagram}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
                 >
-                  <Instagram className="size-4" /> @{socials.instagram}
+                  <Instagram className="size-4" /> {profile.socials.instagram}
                 </a>
               ) : null}
             </div>

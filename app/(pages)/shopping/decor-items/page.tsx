@@ -7,11 +7,20 @@ export const metadata = {
 
 export const revalidate = 60
 
-export default async function DecorPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; sort?: "newest" | "popular" | "price_asc" | "price_desc" | "rating"; minPrice?: string; maxPrice?: string }>
-}) {
+const DECOR_TAGS = ["Prints", "Sculpture", "Ceramics", "Vases", "Wall Art", "Lighting"]
+
+interface PageProps {
+  searchParams: Promise<{
+    q?: string
+    tag?: string
+    sort?: "newest" | "popular" | "price_asc" | "price_desc" | "rating"
+    minPrice?: string
+    maxPrice?: string
+    page?: string
+  }>
+}
+
+export default async function DecorPage({ searchParams }: PageProps) {
   const params = await searchParams
   return (
     <ProductCategoryPage
@@ -19,6 +28,8 @@ export default async function DecorPage({
       title="Home Decor"
       eyebrow="Shop"
       description="Vases, prints, lighting, sculptural objects from our verified sellers."
+      basePath="/shopping/decor-items"
+      filters={[{ id: "tag", label: "Category", options: DECOR_TAGS }]}
       searchParams={params}
     />
   )

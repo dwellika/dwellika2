@@ -11,15 +11,15 @@ import { Textarea } from "@/components/ui/textarea"
 
 interface ProfileFormProps {
   initial: {
-    username: string
-    full_name: string
-    bio: string
-    website: string
-    location: string
-    interests: string
-    twitter: string
-    instagram: string
-    behance: string
+    username:   string
+    full_name:  string
+    bio:        string
+    website:    string
+    location:   string
+    interests:  string
+    pinterest:  string
+    instagram:  string
+    behance:    string
     artstation: string
   }
 }
@@ -99,8 +99,13 @@ export function ProfileForm({ initial }: ProfileFormProps) {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="twitter">Twitter / X</Label>
-          <Input id="twitter" name="twitter" defaultValue={initial.twitter} placeholder="handle" />
+          <Label htmlFor="pinterest">Pinterest</Label>
+          <Input
+            id="pinterest"
+            name="pinterest"
+            defaultValue={initial.pinterest}
+            placeholder="https://pinterest.com/you"
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="instagram">Instagram</Label>
@@ -116,11 +121,9 @@ export function ProfileForm({ initial }: ProfileFormProps) {
         </div>
       </div>
 
-      {error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error && (
+        <p className="text-sm text-destructive" role="alert">{error}</p>
+      )}
 
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>

@@ -13,70 +13,76 @@ export interface ArtistListParams {
   sort?: "newest" | "followers" | "works"
 }
 
-export const listArtists = unstable_cache(
-  async ({
-    q,
-    mediums,
-    styles,
-    limit = 24,
-    offset = 0,
-  }: ArtistListParams = {}) => {
-    const where = {
-      role: "artist" as const,
-      artist_profile: { isNot: null },
-      ...(mediums?.length || styles?.length
-        ? {
-            artist_profile: {
-              ...(mediums?.length ? { mediums: { hasSome: mediums } } : {}),
-              ...(styles?.length ? { styles: { hasSome: styles } } : {}),
-            },
-          }
-        : {}),
-      ...(q
-        ? {
-            OR: [
-              { username: { contains: q, mode: "insensitive" as const } },
-              { full_name: { contains: q, mode: "insensitive" as const } },
-              { bio: { contains: q, mode: "insensitive" as const } },
-            ],
-          }
-        : {}),
-    }
-
-    const [artists, count] = await prisma.$transaction([
-      prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          username: true,
-          full_name: true,
-          avatar_url: true,
-          cover_url: true,
-          bio: true,
-          is_verified: true,
-          location: true,
+async function _listArtistsImpl({
+  q,
+  mediums,
+  styles,
+  limit = 24,
+  offset = 0,
+}: ArtistListParams = {}) {
+  const profileFilter =
+    mediums?.length || styles?.length
+      ? {
           artist_profile: {
-            select: { tier: true, specialty: true, styles: true, mediums: true, is_verified: true },
+            ...(mediums?.length ? { mediums: { hasSome: mediums } } : {}),
+            ...(styles?.length ? { styles: { hasSome: styles } } : {}),
           },
+        }
+      : { artist_profile: { isNot: null } }
+
+  const where = {
+    role: "artist" as const,
+    ...profileFilter,
+    ...(q
+      ? {
+          OR: [
+            { username: { contains: q, mode: "insensitive" as const } },
+            { full_name: { contains: q, mode: "insensitive" as const } },
+            { bio: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  }
+
+  const [artists, count] = await prisma.$transaction([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        username: true,
+        full_name: true,
+        avatar_url: true,
+        cover_url: true,
+        bio: true,
+        is_verified: true,
+        location: true,
+        artist_profile: {
+          select: { tier: true, specialty: true, styles: true, mediums: true, is_verified: true },
         },
-        orderBy: { created_at: "desc" },
-        take: limit,
-        skip: offset,
-      }),
-      prisma.user.count({ where }),
-    ])
+      },
+      orderBy: { created_at: "desc" },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.user.count({ where }),
+  ])
 
-    // Remap artist_profile → artist_profiles so it matches ArtistCardRow
-    const mapped = artists.map(({ artist_profile, ...rest }) => ({
-      ...rest,
-      artist_profiles: artist_profile,
-    }))
+  const mapped = artists.map(({ artist_profile, ...rest }) => ({
+    ...rest,
+    artist_profiles: artist_profile,
+  }))
 
-    return { artists: mapped, count, error: null }
-  },
-  ["list-artists"],
-  { revalidate: 120, tags: ["artists"] },
-)
+  return { artists: mapped, count, error: null }
+}
+
+export function listArtists(params: ArtistListParams = {}) {
+  const key = JSON.stringify(params, Object.keys(params).sort())
+  return unstable_cache(
+    () => _listArtistsImpl(params),
+    ["list-artists", key],
+    { revalidate: 120, tags: ["artists"] },
+  )()
+}
 
 // cache() deduplicates calls within the same request (e.g. generateMetadata + page)
 export const getProfileByUsername = cache(async (username: string) => {

@@ -255,9 +255,6 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
                 Icon={Ruler}
               />
             ) : null}
-            {data.edition_size ? (
-              <Spec label="Edition size" value={String(data.edition_size)} />
-            ) : null}
             <Spec
               label="Custom size"
               value={data.custom_size_option ? "Available on request" : "Not available"}

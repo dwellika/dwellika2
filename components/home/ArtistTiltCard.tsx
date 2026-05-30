@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion, useReducedMotion } from "framer-motion"
 import { BadgeCheck, Sparkles, UserPlus } from "lucide-react"
 
@@ -23,6 +24,7 @@ export function ArtistTiltCard({ artist }: { artist: MockArtist }) {
   const ref = useRef<HTMLDivElement>(null)
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const prefersReducedMotion = useReducedMotion()
+  const router = useRouter()
 
   const onMove = (e: React.MouseEvent) => {
     if (prefersReducedMotion) return
@@ -38,11 +40,12 @@ export function ArtistTiltCard({ artist }: { artist: MockArtist }) {
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={() => setTilt({ rx: 0, ry: 0 })}
+      onClick={() => router.push(`/u/${artist.username}`)}
       style={{
         transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
         transition: "transform 0.4s var(--ease-art)",
       }}
-      className="group relative h-[360px] w-[280px] shrink-0 overflow-hidden rounded-3xl border border-border bg-card shadow-xl"
+      className="group relative h-[360px] w-[280px] shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-border bg-card shadow-xl"
     >
       <SmartImage
         src={artist.cover}
