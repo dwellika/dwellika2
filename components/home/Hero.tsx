@@ -68,10 +68,13 @@ function Particles() {
       aria-hidden="true"
     >
       {dots.map((i) => {
-        const cx = sr(i * 4) * 100
-        const cy = sr(i * 4 + 1) * 100
-        const r = sr(i * 4 + 2) * 1.5 + 0.5
-        const delay = sr(i * 4 + 3) * 8
+        // Round to a fixed precision so the server- and client-rendered strings
+        // match exactly. Math.sin differs in its last digits between Node and the
+        // browser, which otherwise triggers a hydration mismatch.
+        const cx = (sr(i * 4) * 100).toFixed(3)
+        const cy = (sr(i * 4 + 1) * 100).toFixed(3)
+        const r = Number((sr(i * 4 + 2) * 1.5 + 0.5).toFixed(3))
+        const delay = (sr(i * 4 + 3) * 8).toFixed(2)
         return (
           <circle
             key={i}

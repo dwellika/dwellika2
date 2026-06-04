@@ -27,16 +27,33 @@ async function _listCommunitiesImpl({
   limit = 24,
   offset = 0,
 }: ListCommunitiesParams = {}) {
+  // Category is free-text (e.g. "painting", "abstract") and rarely matches the
+  // UI's pill labels exactly, so treat it as a fuzzy match across category, name
+  // and description. Combined with the search term via AND.
   const where = {
-    ...(category ? { category } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" as const } },
-            { description: { contains: q, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
+    AND: [
+      ...(category
+        ? [
+            {
+              OR: [
+                { category: { contains: category, mode: "insensitive" as const } },
+                { name: { contains: category, mode: "insensitive" as const } },
+                { description: { contains: category, mode: "insensitive" as const } },
+              ],
+            },
+          ]
+        : []),
+      ...(q
+        ? [
+            {
+              OR: [
+                { name: { contains: q, mode: "insensitive" as const } },
+                { description: { contains: q, mode: "insensitive" as const } },
+              ],
+            },
+          ]
+        : []),
+    ],
   }
 
   const [communities, count] = await prisma.$transaction([

@@ -11,8 +11,11 @@ export function NotificationBell() {
   const { user } = useUser()
   const [count, setCount] = useState(0)
 
+  // Depend on the stable id — useUser() returns a new object each render, so a
+  // `[user]` dependency would re-run this effect (and re-fetch) every render.
+  const userId = user?.id
   useEffect(() => {
-    if (!user) return
+    if (!userId) return
 
     const fetchCount = async () => {
       try {
@@ -28,7 +31,7 @@ export function NotificationBell() {
     void fetchCount()
     const interval = setInterval(fetchCount, 30_000)
     return () => clearInterval(interval)
-  }, [user])
+  }, [userId])
 
   return (
     <Button

@@ -150,11 +150,24 @@ export function ArtworkCard({
   )
 }
 
-function formatPrice(price: number | { toNumber(): number; toString(): string }, currency: string) {
-  if (typeof price !== "number") price = price.toNumber()
+function formatPrice(
+  price: number | string | { toNumber(): number; toString(): string },
+  currency: string,
+) {
+  // Prisma Decimal arrives as a string once serialised across the server→client
+  // boundary, so coerce defensively rather than assuming a .toNumber() method.
+  const n =
+    typeof price === "number"
+      ? price
+      : typeof price === "string"
+        ? Number(price)
+        : typeof price?.toNumber === "function"
+          ? price.toNumber()
+          : Number(price)
+  const safe = Number.isFinite(n) ? n : 0
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(price)
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(safe)
   } catch {
-    return `${currency} ${price.toLocaleString()}`
+    return `${currency} ${safe.toLocaleString()}`
   }
 }

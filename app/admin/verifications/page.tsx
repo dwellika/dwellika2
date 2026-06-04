@@ -13,6 +13,7 @@ import {
   ArtistVerifControls,
   DeleteArtistVerifButton,
   DeleteSellerDocsButton,
+  RejectSellerControls,
   ReviewArtistDocControls,
   ReviewSellerDocControls,
 } from "./Controls"
@@ -193,8 +194,9 @@ export default async function AdminVerificationsPage() {
                       <p className="text-xs text-muted-foreground">@{seller?.username}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <ApproveSellerButton sellerId={sellerId} disabled={Boolean(sp?.is_verified)} />
+                    {!sp?.is_verified ? <RejectSellerControls sellerId={sellerId} /> : null}
                     <DeleteSellerDocsButton sellerId={sellerId} />
                   </div>
                 </CardHeader>

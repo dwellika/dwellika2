@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 
 import { signInWithPassword } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
@@ -13,7 +12,6 @@ import { Label } from "@/components/ui/label"
 export function SignInForm({ next = "/" }: { next?: string }) {
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
-  const router = useRouter()
 
   return (
     <form
@@ -25,8 +23,10 @@ export function SignInForm({ next = "/" }: { next?: string }) {
           if (!result.ok) {
             setError(result.error)
           } else {
-            router.push(next)
-            router.refresh()
+            // Hard navigation re-initialises the NextAuth SessionProvider with the
+            // freshly-set cookie. A soft router.push + refresh only re-renders
+            // server components, leaving the client navbar (useSession) stale.
+            window.location.assign(next || "/")
           }
         })
       }

@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useState, useTransition } from "react"
+import { Eye, EyeOff, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 
-import { changePassword } from "./actions"
+import { changePassword, getTwoFactorState, setTwoFactor } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 
 export default function SecuritySettingsPage() {
   return (
@@ -112,9 +114,14 @@ function ChangePasswordCard() {
           {error   && <p className="text-sm text-destructive">{error}</p>}
           {success && <p className="text-sm text-emerald-500">Password updated successfully.</p>}
 
-          <Button type="submit" disabled={pending}>
-            {pending ? "Updating…" : "Update password"}
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button type="submit" disabled={pending}>
+              {pending ? "Updating…" : "Update password"}
+            </Button>
+            <Link href="/forgot-password" className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+              Forgot your password?
+            </Link>
+          </div>
         </form>
       </CardContent>
     </Card>
@@ -122,16 +129,43 @@ function ChangePasswordCard() {
 }
 
 function TwoFactorCard() {
+  const [enabled, setEnabled] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [pending, startTransition] = useTransition()
+
+  useEffect(() => {
+    getTwoFactorState().then((s) => { setEnabled(s.enabled); setLoaded(true) }).catch(() => setLoaded(true))
+  }, [])
+
+  function toggle(next: boolean) {
+    setEnabled(next)
+    startTransition(async () => {
+      const r = await setTwoFactor(next)
+      if (r.ok) toast.success(next ? "Two-factor authentication enabled." : "Two-factor authentication disabled.")
+      else { setEnabled(!next); toast.error(r.error) }
+    })
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Two-factor authentication</CardTitle>
-        <CardDescription>Add a second layer of protection to your account.</CardDescription>
+        <CardTitle className="inline-flex items-center gap-2">
+          <ShieldCheck className="size-5 text-primary" /> Two-factor authentication
+        </CardTitle>
+        <CardDescription>
+          When enabled, a one-time code is emailed to you at sign-in for an extra layer of protection.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">
-          Authenticator-app 2FA is coming soon. You&apos;ll be notified when it&apos;s available.
-        </p>
+        <div className="flex items-center justify-between rounded-lg border border-border p-4">
+          <div>
+            <p className="text-sm font-medium">Email-based 2FA</p>
+            <p className="text-xs text-muted-foreground">
+              {enabled ? "Enabled — codes are sent to your account email." : "Disabled."}
+            </p>
+          </div>
+          <Switch checked={enabled} disabled={!loaded || pending} onCheckedChange={toggle} />
+        </div>
       </CardContent>
     </Card>
   )

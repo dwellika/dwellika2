@@ -35,3 +35,36 @@ export async function changePassword(formData: FormData): Promise<ActionResult> 
   revalidatePath("/settings/security")
   return { ok: true }
 }
+
+export async function getTwoFactorState(): Promise<{ enabled: boolean }> {
+  const session = await auth()
+  if (!session?.user?.id) return { enabled: false }
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { two_factor_enabled: true },
+  })
+  return { enabled: Boolean(user?.two_factor_enabled) }
+}
+
+export async function setTwoFactor(enabled: boolean): Promise<ActionResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: "Not authenticated." }
+
+  // Require a password to be set before enabling email-based 2FA.
+  if (enabled) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { password_hash: true },
+    })
+    if (!user?.password_hash) {
+      return { ok: false, error: "Set a password first, then enable two-factor authentication." }
+    }
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { two_factor_enabled: enabled },
+  })
+  revalidatePath("/settings/security")
+  return { ok: true }
+}

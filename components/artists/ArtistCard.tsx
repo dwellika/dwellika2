@@ -52,12 +52,17 @@ export function ArtistCard({
   const cover = artist.cover_url
   const tier = artist.artist_profiles?.tier
 
+  // Canonical profile path is /u/[username]; fall back to the legacy
+  // /artists/[id] resolver when a username is missing so the card always
+  // navigates somewhere valid.
+  const profileHref = artist.username ? `/u/${artist.username}` : `/artists/${artist.id}`
+
   return (
     <motion.article
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={() => setTilt({ rx: 0, ry: 0 })}
-      onClick={() => { if (artist.username) router.push(`/u/${artist.username}`) }}
+      onClick={() => router.push(profileHref)}
       style={{
         transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
         transition: "transform 0.4s var(--ease-art)",
@@ -101,7 +106,7 @@ export function ArtistCard({
           </Avatar>
           <div className="min-w-0">
             <Link
-              href={`/u/${artist.username}`}
+              href={profileHref}
               className="block truncate font-display text-lg leading-tight hover:underline"
             >
               {artist.full_name ?? `@${artist.username}`}

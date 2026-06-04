@@ -4,6 +4,12 @@ import { unstable_cache } from "next/cache"
 
 import { prisma } from "@/lib/prisma"
 
+// Prisma Decimal can't be serialised to a Client Component — coerce the artwork
+// price to a plain number before returning.
+function serializeArtwork<T extends { price: unknown }>(a: T) {
+  return { ...a, price: a.price == null ? null : Number(a.price) }
+}
+
 export interface ArtworkListParams {
   q?: string
   artistId?: string
@@ -86,14 +92,14 @@ async function _listArtworksImpl({
     prisma.artwork.count({ where }),
   ])
 
-  return { artworks, count, error: null }
+  return { artworks: artworks.map(serializeArtwork), count, error: null }
 }
 
 export const getArtworkBySlug = cache(async function _getArtworkBySlug(
   artistUsername: string,
   slug: string,
 ) {
-  return prisma.artwork.findFirst({
+  const artwork = await prisma.artwork.findFirst({
     where: { artist: { username: artistUsername }, slug, status: "approved" },
     include: {
       artwork_media: { orderBy: { position: "asc" } },
@@ -109,6 +115,7 @@ export const getArtworkBySlug = cache(async function _getArtworkBySlug(
       },
     },
   })
+  return artwork ? serializeArtwork(artwork) : null
 })
 
 export async function listSimilarArtworks(
@@ -116,7 +123,7 @@ export async function listSimilarArtworks(
   mediumOrTags: { medium?: string | null; tags?: string[] },
   limit = 6,
 ) {
-  return prisma.artwork.findMany({
+  const similar = await prisma.artwork.findMany({
     where: {
       id: { not: artworkId },
       status: "approved",
@@ -128,6 +135,7 @@ export async function listSimilarArtworks(
     orderBy: { like_count: "desc" },
     take: limit,
   })
+  return similar.map(serializeArtwork)
 }
 
 export async function incrementArtworkView(artworkId: string) {

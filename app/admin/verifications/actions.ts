@@ -164,7 +164,7 @@ export async function approveSeller(sellerId: string): Promise<ActionResult> {
     await Promise.all([
       prisma.sellerProfile.update({
         where: { id: sellerId },
-        data:  { is_verified: true, verified_at: new Date() },
+        data:  { is_verified: true, verified_at: new Date(), status: "approved", reviewed_by: adminId, reviewed_at: new Date() },
       }),
       prisma.user.update({
         where: { id: sellerId },
@@ -197,6 +197,55 @@ export async function approveSeller(sellerId: string): Promise<ActionResult> {
         action:      "seller_approved",
         target_kind: "seller",
         target_id:   sellerId,
+      },
+    })
+
+    revalidatePath("/admin/verifications")
+    revalidatePath("/admin/sellers")
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
+export async function setSellerVerifStatus(
+  sellerId: string,
+  status: "under_review" | "rejected" | "resubmit_requested",
+  notes: string,
+): Promise<ActionResult> {
+  try {
+    const adminId = await requireAdmin()
+    if (!adminId) return { ok: false, error: "Admins only." }
+
+    await prisma.sellerProfile.update({
+      where: { id: sellerId },
+      data: {
+        status,
+        is_verified: false,
+        reviewed_by:      adminId,
+        reviewed_at:      new Date(),
+        admin_notes:      notes || null,
+        rejection_reason: status === "rejected" ? (notes || null) : undefined,
+      },
+    })
+
+    await prisma.notification.create({
+      data: {
+        user_id:    sellerId,
+        kind:       "system",
+        title:      status === "rejected" ? "Seller verification rejected" : "Seller verification — action required",
+        body:       notes || (status === "resubmit_requested" ? "Please resubmit the requested documents." : "Your application was not approved."),
+        action_url: "/verify/seller",
+      },
+    })
+
+    await prisma.moderationLog.create({
+      data: {
+        admin_id:    adminId,
+        action:      `seller_verif:${status}`,
+        target_kind: "seller",
+        target_id:   sellerId,
+        notes:       notes || null,
       },
     })
 

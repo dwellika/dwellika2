@@ -44,6 +44,8 @@ export default async function ArtsPage({ searchParams }: PageProps) {
 
   const viewer = await getCurrentUser()
 
+  // ISR page: a thrown Prisma/DB error must not crash the route — fall back to
+  // the curated mock grid instead (see README "ISR + DB build resilience").
   const { artworks, count } = await listArtworks({
     q,
     mediums: medium ? [medium] : undefined,
@@ -53,7 +55,7 @@ export default async function ArtsPage({ searchParams }: PageProps) {
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
     limit: PAGE_SIZE,
     offset,
-  })
+  }).catch(() => ({ artworks: [] as Awaited<ReturnType<typeof listArtworks>>["artworks"], count: 0 }))
 
   const usingMock = artworks.length === 0 && count === 0
 

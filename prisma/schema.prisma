@@ -201,6 +201,9 @@ model User {
   is_verified          Boolean   @default(false)
   suspended_until      DateTime?
   notification_prefs   Json      @default("{}")
+  locale               String?
+  region               String?
+  two_factor_enabled   Boolean   @default(false)
   password_hash  String?
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt
@@ -318,17 +321,28 @@ model SellerProfile {
   address       Json?
   shop_address  Json?
   mobile        String?
+  mobile_verified Boolean @default(false)
   website       String?
   socials       Json      @default("{}")
   is_verified   Boolean   @default(false)
   verified_at   DateTime?
   rating_avg    Decimal?  @db.Decimal(3, 2)
   rating_count  Int       @default(0)
+
+  // Verification workflow (mirrors ArtistVerification)
+  status           VerificationStatus @default(draft)
+  submitted_at     DateTime?
+  reviewed_by      String?
+  reviewed_at      DateTime?
+  admin_notes      String?
+  rejection_reason String?
+
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
 
   user User @relation(fields: [id], references: [id], onDelete: Cascade)
 
+  @@index([status])
   @@map("seller_profiles")
 }
 

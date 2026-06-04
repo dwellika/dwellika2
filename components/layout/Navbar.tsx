@@ -45,7 +45,9 @@ export function Navbar() {
         isReels && "max-md:hidden",
       )}
     >
-      <div className="container-page flex h-14 items-center gap-2 sm:h-16 sm:gap-3">
+      {/* Full-viewport-width row (no max-width cap) so the nav, search bar and
+          actions spread across the whole header instead of crowding a 1280px column. */}
+      <div className="flex h-14 w-full items-center gap-2 px-4 sm:h-16 sm:gap-3 sm:px-6 lg:px-8">
         {/* Hamburger — mobile/tablet only */}
         <MobileNav />
 
@@ -65,21 +67,23 @@ export function Navbar() {
           <span className="font-display text-lg tracking-tight sm:text-xl">Dwellika</span>
         </Link>
 
-        {/* Desktop nav links */}
-        <div className="ml-2 hidden md:block">
+        {/* Desktop nav links — the full 7-item bar only fits from xl up; below that
+            the hamburger menu is used instead (see MobileNav). */}
+        <div className="ml-2 hidden xl:block">
           <MainNav />
         </div>
 
-        {/* Right action cluster */}
-        <div className="ml-auto flex items-center gap-0.5 sm:gap-1.5">
-          {/* Desktop search bar */}
+        {/* Right action cluster — natural width, right-aligned. (No flex-1: a
+            squeezed flex-1 search bar was spilling over the icons.) */}
+        <div className="ml-auto flex min-w-0 items-center justify-end gap-0.5 sm:gap-1.5">
+          {/* Desktop search bar — fixed width, only on very wide screens */}
           <CommandTrigger onOpen={() => setCmdOpen(true)} />
 
-          {/* Mobile search icon */}
+          {/* Compact search icon — used until the full search bar appears at 2xl */}
           <Button
             variant="ghost"
             size="icon"
-            className="size-9 md:hidden"
+            className="size-9 shrink-0 2xl:hidden"
             onClick={() => setCmdOpen(true)}
             aria-label="Search"
           >

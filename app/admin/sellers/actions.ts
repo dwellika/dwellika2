@@ -58,11 +58,11 @@ export async function approveSeller(sellerId: string): Promise<ActionResult> {
 
     await prisma.sellerProfile.update({
       where: { id: sellerId },
-      data: { is_verified: true, verified_at: new Date() },
+      data: { is_verified: true, verified_at: new Date(), status: "approved", reviewed_by: adminId, reviewed_at: new Date() },
     })
     await prisma.user.update({
       where: { id: sellerId },
-      data: { is_verified: true },
+      data: { role: "seller", is_verified: true },
     })
 
     const badge = await prisma.badge.findFirst({ where: { slug: "verified_seller" } })

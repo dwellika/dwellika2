@@ -51,6 +51,8 @@ export async function ProductCategoryPage({
 
   const viewer = await getCurrentUser()
 
+  // ISR page: never let a Prisma/DB failure crash the route — fall back to the
+  // empty state instead (see README "ISR + DB build resilience").
   const { products, count } = await listProducts({
     category,
     q,
@@ -60,7 +62,7 @@ export async function ProductCategoryPage({
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
     limit: PAGE_SIZE,
     offset,
-  })
+  }).catch(() => ({ products: [], count: 0 }))
 
   // Build filter list: always include the tag filter if options are provided,
   // plus any extra filters passed by the caller.

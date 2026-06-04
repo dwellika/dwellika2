@@ -95,7 +95,7 @@ export default async function WorkshopPage({ params }: PageProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
       </div>
 
-      <div className="container-page -mt-16 pb-16">
+      <div className="container-page relative z-10 -mt-16 pb-16">
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div className="space-y-6">
             <header className="space-y-2">

@@ -81,7 +81,7 @@ export type ReelWithCreator = {
     id: string
     slug: string
     title: string
-    price: unknown
+    price: number | null
     currency: string
     for_sale: boolean
   } | null
@@ -89,11 +89,25 @@ export type ReelWithCreator = {
     id: string
     slug: string
     title: string
-    price: unknown
+    price: number | null
     currency: string
   } | null
   _isTrending?: boolean
   _isRecommended?: boolean
+}
+
+// Prisma Decimal cannot be passed to a Client Component — coerce the nested
+// artwork/product prices to plain numbers before the data crosses the boundary.
+function normalizeReel(r: any): ReelWithCreator {
+  return {
+    ...r,
+    artwork: r.artwork
+      ? { ...r.artwork, price: r.artwork.price == null ? null : Number(r.artwork.price) }
+      : null,
+    product: r.product
+      ? { ...r.product, price: r.product.price == null ? null : Number(r.product.price) }
+      : null,
+  }
 }
 
 export async function listReels({
@@ -119,13 +133,15 @@ export async function listReels({
     skip: ids ? undefined : offset,
   })
 
+  const normalized = rows.map(normalizeReel)
+
   // Preserve order from `ids` array when provided
   if (ids) {
-    const map = new Map(rows.map((r: any) => [r.id, r]))
+    const map = new Map(normalized.map((r) => [r.id, r]))
     return ids.map((id) => map.get(id)).filter(Boolean) as ReelWithCreator[]
   }
 
-  return rows as unknown as ReelWithCreator[]
+  return normalized
 }
 
 export const getReelById = cache(
@@ -134,6 +150,6 @@ export const getReelById = cache(
       where: { id, status: "approved" },
       select: reelSelect,
     })
-    return row as unknown as ReelWithCreator | null
+    return row ? normalizeReel(row) : null
   },
 )

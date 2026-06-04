@@ -1,8 +1,8 @@
 "use client"
 
 import { useTransition } from "react"
+import { signOut } from "next-auth/react"
 
-import { signOutAction as signOut } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
 
 export function SignOutButton({
@@ -20,7 +20,9 @@ export function SignOutButton({
     <form
       action={() =>
         startTransition(async () => {
-          await signOut()
+          // Client signOut clears the SessionProvider state and hard-navigates,
+          // so the navbar reflects the signed-out state immediately.
+          await signOut({ callbackUrl: "/" })
         })
       }
     >
