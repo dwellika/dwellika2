@@ -12,6 +12,8 @@ import {
   Users2,
   BadgeCheck,
   ShieldQuestion,
+  CalendarDays,
+  LayoutDashboard,
 } from "lucide-react"
 
 import { requireRole } from "@/lib/auth/rbac"
@@ -21,11 +23,14 @@ const NAV = [
   { href: "/admin/analytics",    label: "Analytics",     Icon: BarChart3,   superAdminOnly: false },
   { href: "/admin/moderation",   label: "Moderation",    Icon: ShieldCheck, superAdminOnly: false },
   { href: "/admin/verifications",label: "Verifications", Icon: BadgeCheck,  superAdminOnly: false },
+  { href: "/admin/featured",     label: "Featured",      Icon: Sparkles,    superAdminOnly: false },
   { href: "/admin/disputes",     label: "Disputes",      Icon: ShieldAlert, superAdminOnly: false },
   { href: "/admin/orders",       label: "Orders",        Icon: ShoppingBag, superAdminOnly: false },
   { href: "/admin/users",        label: "Users",         Icon: Users,       superAdminOnly: false },
   { href: "/admin/communities",  label: "Communities",   Icon: Users2,      superAdminOnly: false },
   { href: "/admin/competitions", label: "Competitions",  Icon: Trophy,      superAdminOnly: false },
+  { href: "/admin/events",       label: "Events",        Icon: CalendarDays, superAdminOnly: false },
+  { href: "/admin/homepage",     label: "Homepage",      Icon: LayoutDashboard, superAdminOnly: false },
   { href: "/admin/admins",       label: "Admins",        Icon: ShieldQuestion, superAdminOnly: true },
 ] as const
 

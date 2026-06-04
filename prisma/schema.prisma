@@ -1300,3 +1300,77 @@ model SellerVerificationDoc {
   @@index([seller_id])
   @@map("seller_verification_docs")
 }
+
+// Artist-submitted artworks for the curated "Featured" collection. Admins score
+// six weighted components; feature_score is the computed weighted total.
+// Scalar references (no Prisma relations) to avoid touching User/Artwork.
+model FeaturedSubmission {
+  id          String   @id @default(cuid())
+  artwork_id  String   @unique
+  artist_id   String
+  status      String   @default("pending") // pending | featured | rejected
+  pitch       String?
+
+  // Component scores (0-100), filled by the curation team
+  quality_score    Float?
+  engagement_score Float?
+  sales_score      Float?
+  freshness_score  Float?
+  diversity_bonus  Float?
+  curator_boost    Float?
+  feature_score    Float?  // weighted total
+
+  reviewed_by String?
+  reviewed_at DateTime?
+  admin_notes String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([status])
+  @@index([artist_id])
+  @@map("featured_submissions")
+}
+
+// Admin-managed events surfaced on the platform (a unified CRUD for
+// competitions / workshops / exhibitions / other promotional events).
+model Event {
+  id           String    @id @default(cuid())
+  kind         String    @default("exhibition") // competition | workshop | exhibition | other
+  slug         String    @unique
+  title        String
+  description  String?
+  cover_url    String?
+  location     String?
+  starts_at    DateTime?
+  ends_at      DateTime?
+  url          String?
+  is_published Boolean   @default(false)
+  is_featured  Boolean   @default(false)
+  created_by   String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@index([kind, starts_at])
+  @@index([is_published])
+  @@map("events")
+}
+
+// Curated placements for homepage sections (admin promote/demote). Also stores
+// the Artist-of-the-Week score breakdown in `meta`.
+model HomepageFeature {
+  id          String   @id @default(cuid())
+  section     String   // trending_artists | best_studio | artist_of_week | recently_sold
+  entity_type String   @default("user") // user | studio | artwork
+  entity_id   String
+  position    Int      @default(0)
+  is_active   Boolean  @default(true)
+  score       Float?
+  meta        Json     @default("{}")
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([section, is_active, position])
+  @@map("homepage_features")
+}
