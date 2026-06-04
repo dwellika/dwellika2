@@ -690,8 +690,10 @@ function ReelItem({
           </button>
         </div>
 
-        {/* Bottom info overlay */}
-        <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 px-4 pb-8 text-white md:pb-6" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 2rem))" }}>
+        {/* Bottom info overlay — right padding keeps the Follow button and caption
+            clear of the vertical action rail (Like/Comment/Share/Bookmark) so the
+            Follow and Bookmark buttons no longer overlap. */}
+        <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 pb-8 pl-4 pr-16 text-white md:pb-6" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 2rem))" }}>
           {/* BUY CTA */}
           {showBuy && (
             <Link

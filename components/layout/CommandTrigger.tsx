@@ -9,7 +9,7 @@ export function CommandTrigger({ onOpen }: CommandTriggerProps) {
     <button
       onClick={onOpen}
       type="button"
-      className="hidden h-9 w-full max-w-xs items-center gap-2 rounded-full border border-border bg-muted/30 px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/50 md:inline-flex"
+      className="hidden h-9 w-56 shrink-0 items-center gap-2 overflow-hidden rounded-full border border-border bg-muted/30 px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/50 2xl:inline-flex"
     >
       <Search className="size-4" />
       <span>Search Dwellika…</span>

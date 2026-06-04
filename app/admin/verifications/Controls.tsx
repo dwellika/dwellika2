@@ -10,6 +10,7 @@ import {
   reviewArtistDoc,
   reviewSellerDoc,
   setArtistVerifStatus,
+  setSellerVerifStatus,
 } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -180,6 +181,37 @@ export function ApproveSellerButton({
     >
       {disabled ? "Verified ✓" : pending ? "Approving…" : "Approve seller"}
     </Button>
+  )
+}
+
+// ─── Seller reject / resubmit ─────────────────────────────────────────────────
+
+export function RejectSellerControls({ sellerId }: { sellerId: string }) {
+  const [notes, setNotes] = useState("")
+  const [pending, startTransition] = useTransition()
+
+  const act = (status: "rejected" | "resubmit_requested") =>
+    startTransition(async () => {
+      const r = await setSellerVerifStatus(sellerId, status, notes)
+      if (r.ok) toast.success(`Status → ${status.replace("_", " ")}`)
+      else toast.error(r.error)
+    })
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        placeholder="Notes (required for reject)"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        className="h-8 w-40 text-xs"
+      />
+      <Button size="sm" variant="ghost" disabled={pending || !notes} onClick={() => act("rejected")}>
+        Reject
+      </Button>
+      <Button size="sm" variant="outline" disabled={pending} onClick={() => act("resubmit_requested")}>
+        Resubmit
+      </Button>
+    </div>
   )
 }
 

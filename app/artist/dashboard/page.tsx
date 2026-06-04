@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Eye, Heart, Plus, TrendingUp, Users } from "lucide-react"
+import { Eye, Film, Heart, Plus, TrendingUp, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -37,11 +37,18 @@ export default async function ArtistDashboardPage() {
             Upload, edit, and track approvals for your work.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/artist/artworks/new">
-            <Plus className="size-4" /> New artwork
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/artist/reels/new">
+              <Film className="size-4" /> New reel
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/artist/artworks/new">
+              <Plus className="size-4" /> New artwork
+            </Link>
+          </Button>
+        </div>
       </header>
 
       {/* Analytics */}

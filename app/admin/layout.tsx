@@ -11,24 +11,28 @@ import {
   Users,
   Users2,
   BadgeCheck,
+  ShieldQuestion,
 } from "lucide-react"
 
 import { requireRole } from "@/lib/auth/rbac"
 
 const NAV = [
-  { href: "/admin",              label: "Overview",      Icon: Gauge       },
-  { href: "/admin/analytics",    label: "Analytics",     Icon: BarChart3   },
-  { href: "/admin/moderation",   label: "Moderation",    Icon: ShieldCheck },
-  { href: "/admin/verifications",label: "Verifications", Icon: BadgeCheck  },
-  { href: "/admin/disputes",     label: "Disputes",      Icon: ShieldAlert },
-  { href: "/admin/orders",       label: "Orders",        Icon: ShoppingBag },
-  { href: "/admin/users",        label: "Users",         Icon: Users       },
-  { href: "/admin/communities",  label: "Communities",   Icon: Users2      },
-  { href: "/admin/competitions", label: "Competitions",  Icon: Trophy      },
+  { href: "/admin",              label: "Overview",      Icon: Gauge,       superAdminOnly: false },
+  { href: "/admin/analytics",    label: "Analytics",     Icon: BarChart3,   superAdminOnly: false },
+  { href: "/admin/moderation",   label: "Moderation",    Icon: ShieldCheck, superAdminOnly: false },
+  { href: "/admin/verifications",label: "Verifications", Icon: BadgeCheck,  superAdminOnly: false },
+  { href: "/admin/disputes",     label: "Disputes",      Icon: ShieldAlert, superAdminOnly: false },
+  { href: "/admin/orders",       label: "Orders",        Icon: ShoppingBag, superAdminOnly: false },
+  { href: "/admin/users",        label: "Users",         Icon: Users,       superAdminOnly: false },
+  { href: "/admin/communities",  label: "Communities",   Icon: Users2,      superAdminOnly: false },
+  { href: "/admin/competitions", label: "Competitions",  Icon: Trophy,      superAdminOnly: false },
+  { href: "/admin/admins",       label: "Admins",        Icon: ShieldQuestion, superAdminOnly: true },
 ] as const
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  await requireRole("admin", "super_admin")
+  const user = await requireRole("admin", "super_admin")
+  const isSuperAdmin = user.role === "super_admin"
+  const nav = NAV.filter((n) => !n.superAdminOnly || isSuperAdmin)
 
   return (
     <div className="container-page py-10">
@@ -41,7 +45,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <nav className="flex flex-row gap-1 overflow-x-auto lg:flex-col">
-            {NAV.map(({ href, label, Icon }) => (
+            {nav.map(({ href, label, Icon }) => (
               <Link
                 key={href}
                 href={href}

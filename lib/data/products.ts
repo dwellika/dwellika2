@@ -3,6 +3,16 @@ import "server-only"
 import { prisma } from "@/lib/prisma"
 import type { ProductCategory } from "@/lib/types/database"
 
+// Prisma Decimal can't be serialised to a Client Component — coerce the money
+// fields (price, rating_avg) to plain numbers before returning.
+function serializeProduct<T extends { price: unknown; rating_avg: unknown }>(p: T) {
+  return {
+    ...p,
+    price: p.price == null ? null : Number(p.price),
+    rating_avg: p.rating_avg == null ? null : Number(p.rating_avg),
+  }
+}
+
 export interface ProductListParams {
   q?: string
   category?: ProductCategory
@@ -75,7 +85,7 @@ export async function listProducts({
     prisma.product.count({ where }),
   ])
 
-  return { products, count }
+  return { products: products.map(serializeProduct), count }
 }
 
 export async function getProductBySlug(sellerUsername: string, slug: string) {
@@ -91,17 +101,18 @@ export async function getProductBySlug(sellerUsername: string, slug: string) {
   })
   if (!product) return null
 
-  return { ...product, seller }
+  return serializeProduct({ ...product, seller })
 }
 
 // ─── Seller-side helpers ──────────────────────────────────────────────────────
 
 export async function listSellerProducts(sellerId: string) {
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: { seller_id: sellerId },
     include: { product_media: { where: { is_primary: true }, take: 1 } },
     orderBy: { created_at: "desc" },
   })
+  return products.map(serializeProduct)
 }
 
 export async function updateProductInventory(

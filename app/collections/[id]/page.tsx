@@ -42,7 +42,9 @@ export default async function CollectionDetailPage({ params }: PageProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
       </div>
 
-      <div className="container-page -mt-20 pb-16">
+      {/* relative z-10 lifts the pulled-up content above the positioned cover,
+          otherwise the title's top edge renders behind the cover image. */}
+      <div className="container-page relative z-10 -mt-20 pb-16">
         <header className="mb-8">
           <Badge variant="secondary">Curated</Badge>
           <h1 className="mt-2 font-display text-5xl md:text-6xl">{collection.title}</h1>

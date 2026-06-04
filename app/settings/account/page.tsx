@@ -3,20 +3,147 @@
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import { deleteAccount, updateEmail } from "./actions"
+import { deleteAccount, updateEmail, updateRegionSettings, updateUsername } from "./actions"
+import { useUser } from "@/lib/auth/use-user"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "hi", label: "हिन्दी (Hindi)" },
+  { value: "bn", label: "বাংলা (Bengali)" },
+  { value: "ta", label: "தமிழ் (Tamil)" },
+  { value: "te", label: "తెలుగు (Telugu)" },
+  { value: "mr", label: "मराठी (Marathi)" },
+]
+
+const REGIONS = [
+  { value: "IN", label: "India" },
+  { value: "US", label: "United States" },
+  { value: "GB", label: "United Kingdom" },
+  { value: "AE", label: "United Arab Emirates" },
+  { value: "SG", label: "Singapore" },
+  { value: "AU", label: "Australia" },
+]
 
 export default function AccountSettingsPage() {
   return (
     <div className="space-y-6">
+      <UsernameSection />
+      <Separator />
+      <RegionSection />
+      <Separator />
       <EmailSection />
       <Separator />
       <DangerZone />
     </div>
+  )
+}
+
+function UsernameSection() {
+  const { user } = useUser()
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Username</CardTitle>
+        <CardDescription>Your public handle — used in your profile URL (/u/your-name).</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          key={user?.username ?? "loading"}
+          action={(fd) =>
+            startTransition(async () => {
+              setError(null)
+              const r = await updateUsername(fd)
+              if (r.ok) toast.success("Username updated.")
+              else setError(r.error)
+            })
+          }
+          className="flex max-w-md flex-col gap-3 sm:flex-row sm:items-end"
+        >
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              name="username"
+              required
+              defaultValue={user?.username ?? ""}
+              pattern="^[a-z0-9_]{3,32}$"
+              placeholder="lowercase, numbers, underscore"
+            />
+          </div>
+          <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save"}</Button>
+        </form>
+        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+      </CardContent>
+    </Card>
+  )
+}
+
+function RegionSection() {
+  const [pending, startTransition] = useTransition()
+  const [locale, setLocale] = useState("en")
+  const [region, setRegion] = useState("IN")
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Language & region</CardTitle>
+        <CardDescription>Set your preferred language and region.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          action={() =>
+            startTransition(async () => {
+              const fd = new FormData()
+              fd.set("locale", locale)
+              fd.set("region", region)
+              const r = await updateRegionSettings(fd)
+              if (r.ok) toast.success("Preferences saved.")
+              else toast.error(r.error)
+            })
+          }
+          className="flex max-w-md flex-col gap-4"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Language</Label>
+              <Select value={locale} onValueChange={setLocale}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Region</Label>
+              <Select value={region} onValueChange={setRegion}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {REGIONS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button type="submit" disabled={pending} className="self-start">
+            {pending ? "Saving…" : "Save preferences"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
 

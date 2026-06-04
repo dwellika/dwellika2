@@ -129,7 +129,8 @@ export function MainNav() {
           <NavigationMenuTrigger>
             <GraduationCap className="mr-1.5 size-4" /> Learn
           </NavigationMenuTrigger>
-          <NavigationMenuContent>
+          {/* Right-align so this rightmost dropdown doesn't overflow the viewport */}
+          <NavigationMenuContent className="left-auto right-0">
             <ul className="grid w-[420px] gap-3 p-4 md:grid-cols-2">
               {LEARN_ITEMS.map(({ title, href, description, Icon }) => (
                 <li key={href}>

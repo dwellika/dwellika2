@@ -76,7 +76,7 @@ export default async function CommunityFeedPage({ params }: PageProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
       </div>
 
-      <div className="container-page -mt-16 pb-16">
+      <div className="container-page relative z-10 -mt-16 pb-16">
         <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="flex items-center gap-2">

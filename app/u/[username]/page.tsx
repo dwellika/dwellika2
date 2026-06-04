@@ -146,7 +146,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
       </div>
 
-      <div className="container-page -mt-20 pb-16">
+      <div className="container-page relative z-10 -mt-20 pb-16">
         <div className="flex flex-col items-start gap-6 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col items-center gap-4 md:flex-row md:items-end">
             <Avatar className="h-32 w-32 ring-4 ring-background md:h-40 md:w-40">
@@ -182,11 +182,23 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             </div>
           </div>
 
-          <div className="flex w-full gap-2 md:w-auto">
+          <div className="flex w-full flex-wrap gap-2 md:w-auto md:justify-end">
             {isSelf ? (
-              <Button asChild variant="outline">
-                <Link href="/settings/profile">Edit profile</Link>
-              </Button>
+              <>
+                <Button asChild variant="outline">
+                  <Link href="/settings/profile">Edit profile</Link>
+                </Button>
+                {!["artist", "admin", "super_admin"].includes(viewer?.role ?? "") ? (
+                  <Button asChild variant="secondary">
+                    <Link href="/verify/artist">Verify as artist</Link>
+                  </Button>
+                ) : null}
+                {!["seller", "admin", "super_admin"].includes(viewer?.role ?? "") ? (
+                  <Button asChild variant="secondary">
+                    <Link href="/verify/seller">Verify as seller</Link>
+                  </Button>
+                ) : null}
+              </>
             ) : (
               <FollowButton
                 targetUserId={profile.id}

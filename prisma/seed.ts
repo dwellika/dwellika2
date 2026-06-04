@@ -427,8 +427,8 @@ async function seedArtworks(users: Record<string, { id: string }>) {
       {
         artwork_id: artworks[2].id,
         kind: MediaKind.image,
-        url: "https://images.unsplash.com/photo-1490750967868-88df5691b64b?w=1200&q=80",
-        thumbnail_url: "https://images.unsplash.com/photo-1490750967868-88df5691b64b?w=400&q=60",
+        url: "https://picsum.photos/seed/dwellika-monsoon/1200/900",
+        thumbnail_url: "https://picsum.photos/seed/dwellika-monsoon/400/300",
         width: 1200, height: 1714, position: 0, is_primary: true,
       },
       {
@@ -441,8 +441,8 @@ async function seedArtworks(users: Record<string, { id: string }>) {
       {
         artwork_id: artworks[4].id,
         kind: MediaKind.image,
-        url: "https://images.unsplash.com/photo-1567359781514-81212b4d75ef?w=1200&q=80",
-        thumbnail_url: "https://images.unsplash.com/photo-1567359781514-81212b4d75ef?w=400&q=60",
+        url: "https://picsum.photos/seed/dwellika-abstract/1200/900",
+        thumbnail_url: "https://picsum.photos/seed/dwellika-abstract/400/300",
         width: 1200, height: 1500, position: 0, is_primary: true,
       },
       {
@@ -627,7 +627,7 @@ async function seedReels(
       {
         creator_id: users["artist2@dwellika.com"].id,
         video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-        thumbnail_url: "https://images.unsplash.com/photo-1567359781514-81212b4d75ef?w=720&q=80",
+        thumbnail_url: "https://picsum.photos/seed/dwellika-abstract/720/1280",
         caption: "Signal & Noise — why I paint in silence 🔇 The work speaks louder than I can.",
         duration_sec: 30,
         artwork_id: artworks[4].id,
@@ -961,7 +961,7 @@ async function seedCompetitions(
       artwork_id: artworks[2].id, // Monsoon Meditation
       title: "Monsoon Meditation",
       description: "Solitude under a monsoon sky — the still moment before the storm.",
-      media_url: "https://images.unsplash.com/photo-1490750967868-88df5691b64b?w=1200&q=80",
+      media_url: "https://picsum.photos/seed/dwellika-monsoon/1200/900",
       status: ContentStatus.approved,
       vote_count: 3,
     },
@@ -1030,7 +1030,7 @@ async function seedCoursesAndWorkshops(users: Record<string, { id: string }>) {
         slug: "watercolor-fundamentals",
         title: "Watercolor Fundamentals: From First Wash to Finished Piece",
         description: "Master the basics of watercolor — wet-on-wet, wet-on-dry, granulation, glazing, and lifting. Suitable for complete beginners.",
-        cover_url: "https://images.unsplash.com/photo-1490750967868-88df5691b64b?w=1200&q=80",
+        cover_url: "https://picsum.photos/seed/dwellika-monsoon/1200/900",
         level: CourseLevel.beginner,
         price: 1999,
         currency: "INR",
@@ -1120,7 +1120,7 @@ async function seedCoursesAndWorkshops(users: Record<string, { id: string }>) {
         slug: "live-watercolor-monsoon",
         title: "Live Workshop: Painting Monsoon Scenes in Watercolor",
         description: "A 3-hour live session with Priya. We'll paint a monsoon landscape together, step by step. Materials list sent on registration.",
-        cover_url: "https://images.unsplash.com/photo-1490750967868-88df5691b64b?w=1200&q=80",
+        cover_url: "https://picsum.photos/seed/dwellika-monsoon/1200/900",
         starts_at: future(12),
         ends_at: new Date(future(12).getTime() + 3 * 60 * 60 * 1000),
         is_live: true,

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { LogOut, MessageSquare, Settings, ShieldAlert, ShoppingBag, Heart, User2, UserCircle2 } from "lucide-react"
+import { BadgeCheck, LogOut, MessageSquare, Settings, ShieldAlert, ShoppingBag, Store, Heart, User2, UserCircle2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { signOut } from "next-auth/react"
 
@@ -23,15 +23,19 @@ export function UserMenu() {
   const { user, loading } = useUser()
   const [level, setLevel] = useState<{ level: UserLevel; xp: number } | null>(null)
 
+  // Depend on the stable user id, not the `user` object — useUser() returns a
+  // fresh object every render, so depending on `user` re-runs this effect on
+  // every render (and setLevel re-renders), causing an infinite fetch loop.
+  const userId = user?.id
   useEffect(() => {
-    if (!user) return
-    fetch(`/api/user/${user.id}/level`)
+    if (!userId) return
+    fetch(`/api/user/${userId}/level`)
       .then((r) => r.ok ? r.json() : null)
       .then((data: { level: UserLevel; xp: number } | null) => {
         if (data) setLevel(data)
       })
       .catch(() => { })
-  }, [user])
+  }, [userId])
 
   if (loading) {
     return <div className="h-9 w-24 animate-pulse rounded-md bg-muted/40" />
@@ -39,7 +43,7 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         {/* xs / small phones: single icon → sign in page */}
         <Button variant="ghost" size="icon" asChild className="size-9 sm:hidden" aria-label="Sign in">
           <Link href="/signin">
@@ -47,11 +51,12 @@ export function UserMenu() {
           </Link>
         </Button>
 
-        {/* md and up: full text buttons */}
-        <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex">
+        {/* Separate "Sign in" link only appears once there is room (lg+).
+            Below lg it is merged into the single "Join Dwellika" CTA. */}
+        <Button variant="ghost" size="sm" asChild className="hidden lg:inline-flex">
           <Link href="/signin">Sign in</Link>
         </Button>
-        <Button size="sm" asChild className="hidden sm:inline-flex">
+        <Button size="sm" asChild className="hidden whitespace-nowrap sm:inline-flex">
           <Link href="/signup">Join Dwellika</Link>
         </Button>
       </div>
@@ -125,6 +130,21 @@ export function UserMenu() {
             <ShieldAlert className="size-4" /> Disputes
           </Link>
         </DropdownMenuItem>
+        {/* Verification entry points — hidden once the user already holds the role */}
+        {!["artist", "admin", "super_admin"].includes(user.role) ? (
+          <DropdownMenuItem asChild>
+            <Link href="/verify/artist">
+              <BadgeCheck className="size-4" /> Verify as artist
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
+        {!["seller", "admin", "super_admin"].includes(user.role) ? (
+          <DropdownMenuItem asChild>
+            <Link href="/verify/seller">
+              <Store className="size-4" /> Verify as seller
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         {user.role === "artist" ? (
           <DropdownMenuItem asChild>
             <Link href="/artist/dashboard">Artist dashboard</Link>

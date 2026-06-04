@@ -69,10 +69,15 @@ interface AiTags {
 export function NewArtworkForm({ reels }: { reels: ReelOption[] }) {
   const [files, setFiles]       = useState<File[]>([])
   const [artworkType, setArtworkType] = useState("2d_artwork")
-  const [size, setSize]         = useState("")
-  const [medium, setMedium]     = useState("")
-  const [style, setStyle]       = useState("")
-  const [subject, setSubject]   = useState("")
+  // Multi-select arrays — an artwork can span several sizes/mediums/styles/subjects
+  const [sizes, setSizes]       = useState<string[]>([])
+  const [mediums, setMediums]   = useState<string[]>([])
+  const [styles, setStyles]     = useState<string[]>([])
+  const [subjects, setSubjects] = useState<string[]>([])
+  // Free-text captured when "Other" is selected
+  const [otherMedium, setOtherMedium]   = useState("")
+  const [otherStyle, setOtherStyle]     = useState("")
+  const [otherSubject, setOtherSubject] = useState("")
   const [reelId, setReelId]     = useState("")
   const [forSale, setForSale]   = useState(false)
   const [submit, setSubmit]     = useState(true)
@@ -82,12 +87,20 @@ export function NewArtworkForm({ reels }: { reels: ReelOption[] }) {
   const [aiPending, setAiPending] = useState(false)
 
   const is2D = artworkType === "2d_artwork"
-  const showCustomDims = !is2D || size === "Custom" || size === ""
+  const showCustomDims = !is2D || sizes.includes("Custom") || sizes.length === 0
 
   const previews = files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) }))
 
   function resetTypeFields() {
-    setMedium(""); setStyle(""); setSubject(""); setSize("")
+    setMediums([]); setStyles([]); setSubjects([]); setSizes([])
+    setOtherMedium(""); setOtherStyle(""); setOtherSubject("")
+  }
+
+  // Joins selected pills, swapping the literal "Other" for the free-text value.
+  function joinWithOther(arr: string[], other: string) {
+    const out = arr.filter((x) => x !== "Other")
+    if (arr.includes("Other") && other.trim()) out.push(other.trim())
+    return out.join(", ")
   }
 
   async function runAiTagging() {
@@ -109,9 +122,13 @@ export function NewArtworkForm({ reels }: { reels: ReelOption[] }) {
         const tags = json.tags as AiTags
         setAiTags(tags)
         if (is2D) {
-          if (tags.medium  && MEDIUMS_2D.includes(tags.medium))   setMedium(tags.medium)
-          if (tags.style   && STYLES_2D.includes(tags.style))     setStyle(tags.style)
-          if (tags.subject && SUBJECTS_2D.includes(tags.subject)) setSubject(tags.subject)
+          const addUnique = (
+            setter: React.Dispatch<React.SetStateAction<string[]>>,
+            value: string,
+          ) => setter((prev) => (prev.includes(value) ? prev : [...prev, value]))
+          if (tags.medium  && MEDIUMS_2D.includes(tags.medium))   addUnique(setMediums, tags.medium)
+          if (tags.style   && STYLES_2D.includes(tags.style))     addUnique(setStyles, tags.style)
+          if (tags.subject && SUBJECTS_2D.includes(tags.subject)) addUnique(setSubjects, tags.subject)
         }
         toast.success("AI suggested tags ready — review and apply.")
       }
@@ -143,15 +160,15 @@ export function NewArtworkForm({ reels }: { reels: ReelOption[] }) {
         startTransition(async () => {
           setError(null)
           fd.set("artwork_type", artworkType)
-          fd.set("size",    size)
           fd.set("reel_id", reelId === "none" ? "" : reelId)
           fd.set("for_sale", forSale ? "on" : "")
           fd.set("submit_for_review", submit ? "on" : "")
-          // Inject dropdown values for 2D
+          // Inject multi-select values for 2D (comma-joined, "Other" → free text)
           if (is2D) {
-            fd.set("medium",  medium)
-            fd.set("style",   style)
-            fd.set("subject", subject)
+            fd.set("size",    sizes.filter((s) => s !== "Custom").join(", "))
+            fd.set("medium",  joinWithOther(mediums, otherMedium))
+            fd.set("style",   joinWithOther(styles, otherStyle))
+            fd.set("subject", joinWithOther(subjects, otherSubject))
           }
           for (const f of files) fd.append("media", f)
           const result = await createArtwork(fd)
@@ -274,49 +291,53 @@ export function NewArtworkForm({ reels }: { reels: ReelOption[] }) {
           </div>
 
           {is2D ? (
-            /* 2D: structured dropdowns */
+            /* 2D: structured multi-select pills (choose one or more) */
             <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Size</Label>
-                  <Select value={size} onValueChange={setSize}>
-                    <SelectTrigger><SelectValue placeholder="Select size…" /></SelectTrigger>
-                    <SelectContent>
-                      {SIZES_2D.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <MultiSelectPills
+                label="Size"
+                hint="Select one or more — choose Custom to enter height × width."
+                options={SIZES_2D}
+                selected={sizes}
+                onToggle={(v) =>
+                  setSizes((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
+                }
+              />
 
-                <div className="space-y-2">
-                  <Label>Medium</Label>
-                  <Select value={medium} onValueChange={setMedium}>
-                    <SelectTrigger><SelectValue placeholder="Select medium…" /></SelectTrigger>
-                    <SelectContent>
-                      {MEDIUMS_2D.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <MultiSelectPills
+                label="Medium"
+                options={MEDIUMS_2D}
+                selected={mediums}
+                onToggle={(v) =>
+                  setMediums((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
+                }
+              />
+              {mediums.includes("Other") && (
+                <Input placeholder="Specify other medium(s)" value={otherMedium} onChange={(e) => setOtherMedium(e.target.value)} />
+              )}
 
-                <div className="space-y-2">
-                  <Label>Style</Label>
-                  <Select value={style} onValueChange={setStyle}>
-                    <SelectTrigger><SelectValue placeholder="Select style…" /></SelectTrigger>
-                    <SelectContent>
-                      {STYLES_2D.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <MultiSelectPills
+                label="Style"
+                options={STYLES_2D}
+                selected={styles}
+                onToggle={(v) =>
+                  setStyles((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
+                }
+              />
+              {styles.includes("Other") && (
+                <Input placeholder="Specify other style(s)" value={otherStyle} onChange={(e) => setOtherStyle(e.target.value)} />
+              )}
 
-                <div className="space-y-2">
-                  <Label>Subject</Label>
-                  <Select value={subject} onValueChange={setSubject}>
-                    <SelectTrigger><SelectValue placeholder="Select subject…" /></SelectTrigger>
-                    <SelectContent>
-                      {SUBJECTS_2D.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <MultiSelectPills
+                label="Subject"
+                options={SUBJECTS_2D}
+                selected={subjects}
+                onToggle={(v) =>
+                  setSubjects((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
+                }
+              />
+              {subjects.includes("Other") && (
+                <Input placeholder="Specify other subject(s)" value={otherSubject} onChange={(e) => setOtherSubject(e.target.value)} />
+              )}
 
               {showCustomDims && (
                 <div className="grid gap-4 md:grid-cols-3">
@@ -457,5 +478,45 @@ function Pill({ label }: { label: string }) {
     <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
       {label}
     </span>
+  )
+}
+
+function MultiSelectPills({
+  label,
+  hint,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string
+  hint?: string
+  options: string[]
+  selected: string[]
+  onToggle: (value: string) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label} <span className="text-xs font-normal text-muted-foreground">(select one or more)</span></Label>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((opt) => {
+          const active = selected.includes(opt)
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onToggle(opt)}
+              className={
+                active
+                  ? "rounded-full border border-primary bg-primary/15 px-3 py-1 text-xs font-medium text-primary"
+                  : "rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+              }
+            >
+              {opt}
+            </button>
+          )
+        })}
+      </div>
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
   )
 }

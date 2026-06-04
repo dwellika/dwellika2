@@ -8,6 +8,35 @@ import { prisma } from "@/lib/prisma"
 
 type ActionResult = { ok: true } | { ok: false; error: string }
 
+export async function updateUsername(formData: FormData): Promise<ActionResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: "Not authenticated." }
+
+  const username = String(formData.get("username") ?? "").trim().toLowerCase()
+  if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+    return { ok: false, error: "Username must be 3-32 chars: lowercase letters, numbers, or underscores." }
+  }
+
+  const existing = await prisma.user.findUnique({ where: { username }, select: { id: true } })
+  if (existing && existing.id !== session.user.id) {
+    return { ok: false, error: "That username is already taken." }
+  }
+
+  await prisma.user.update({ where: { id: session.user.id }, data: { username } })
+  return { ok: true }
+}
+
+export async function updateRegionSettings(formData: FormData): Promise<ActionResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { ok: false, error: "Not authenticated." }
+
+  const locale = String(formData.get("locale") ?? "").trim() || null
+  const region = String(formData.get("region") ?? "").trim() || null
+
+  await prisma.user.update({ where: { id: session.user.id }, data: { locale, region } })
+  return { ok: true }
+}
+
 export async function updateEmail(formData: FormData): Promise<ActionResult> {
   const session = await auth()
   if (!session?.user?.id) return { ok: false, error: "Not authenticated." }

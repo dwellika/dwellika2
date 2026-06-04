@@ -51,9 +51,13 @@ export default async function ArtistsPage({ searchParams }: PageProps) {
     mediums: medium ? [medium] : undefined,
     limit: PAGE_SIZE,
     offset,
-  })
+  }).catch(() => ({ artists: [], count: 0 }))
 
-  const usingMock = artists.length === 0 && count === 0
+  // Only fall back to curated mock artists on a truly empty catalogue (no search
+  // or filter applied). When a filter IS active, an empty result must show the
+  // empty state — otherwise unfiltered mock data makes the filter look broken.
+  const hasActiveFilter = Boolean(q || medium)
+  const usingMock = !hasActiveFilter && artists.length === 0 && count === 0
   const display: ArtistCardRow[] = usingMock
     ? MOCK_ARTISTS.map((a) => ({
         id: a.id,
