@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Eye, Film, Heart, Plus, TrendingUp, Users } from "lucide-react"
+import { Eye, Film, GraduationCap, Heart, Mic, Plus, Sparkles, TrendingUp, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -38,6 +38,15 @@ export default async function ArtistDashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="ghost">
+            <Link href="/artist/workshops"><Mic className="size-4" /> Workshops</Link>
+          </Button>
+          <Button asChild variant="ghost">
+            <Link href="/artist/courses"><GraduationCap className="size-4" /> Courses</Link>
+          </Button>
+          <Button asChild variant="ghost">
+            <Link href="/artist/featured"><Sparkles className="size-4" /> Featured</Link>
+          </Button>
           <Button asChild variant="outline">
             <Link href="/artist/reels/new">
               <Film className="size-4" /> New reel

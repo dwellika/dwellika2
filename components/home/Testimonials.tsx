@@ -11,16 +11,34 @@ import { MOCK_TESTIMONIALS } from "@/lib/mock/home"
 
 import { Section } from "./Section"
 
+export interface TestimonialItem {
+  id: string
+  group: "artist" | "seller" | "buyer"
+  author: string
+  role: string
+  avatar: string | null
+  body: string
+}
+
 const GROUPS = [
   { id: "artist", label: "Artists" },
   { id: "seller", label: "Sellers" },
   { id: "buyer", label: "Buyers" },
 ] as const
 
+const MOCK_ITEMS: TestimonialItem[] = MOCK_TESTIMONIALS.map((t, i) => ({
+  id: `mock-${i}`,
+  group: t.group,
+  author: t.author,
+  role: t.role,
+  avatar: t.avatar,
+  body: t.body,
+}))
+
 function Carousel({
   items,
 }: {
-  items: { author: string; role: string; avatar: string; body: string }[]
+  items: { author: string; role: string; avatar: string | null; body: string }[]
 }) {
   const [index, setIndex] = useState(0)
   useEffect(() => {
@@ -49,7 +67,7 @@ function Carousel({
               </p>
               <div className="flex items-center gap-3">
                 <Avatar className="size-12 ring-2 ring-primary/30">
-                  <AvatarImage src={current.avatar} alt={current.author} />
+                  <AvatarImage src={current.avatar ?? undefined} alt={current.author} />
                   <AvatarFallback>{current.author.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -81,7 +99,8 @@ function Carousel({
   )
 }
 
-export function Testimonials() {
+export function Testimonials({ items }: { items?: TestimonialItem[] } = {}) {
+  const all = items && items.length > 0 ? items : MOCK_ITEMS
   return (
     <Section eyebrow="Loved by" title="The people who make Dwellika">
       <Tabs defaultValue="artist" className="mx-auto max-w-3xl">
@@ -92,18 +111,25 @@ export function Testimonials() {
             </TabsTrigger>
           ))}
         </TabsList>
-        {GROUPS.map(({ id }) => (
-          <TabsContent key={id} value={id}>
-            <Carousel
-              items={MOCK_TESTIMONIALS.filter((t) => t.group === id).map((t) => ({
-                author: t.author,
-                role: t.role,
-                avatar: t.avatar,
-                body: t.body,
-              }))}
-            />
-          </TabsContent>
-        ))}
+        {GROUPS.map(({ id }) => {
+          const groupItems = all.filter((t) => t.group === id)
+          return (
+            <TabsContent key={id} value={id}>
+              {groupItems.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground">No stories yet from this group.</p>
+              ) : (
+                <Carousel
+                  items={groupItems.map((t) => ({
+                    author: t.author,
+                    role: t.role,
+                    avatar: t.avatar,
+                    body: t.body,
+                  }))}
+                />
+              )}
+            </TabsContent>
+          )
+        })}
       </Tabs>
     </Section>
   )
