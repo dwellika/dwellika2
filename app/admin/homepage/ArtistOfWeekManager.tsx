@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import { clearArtistOfWeek, computeArtistScore, setArtistOfWeek } from "./actions"
+import { clearArtistOfWeek, setArtistOfWeek } from "./actions"
+import { computeArtistScore } from "./score"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"

@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import { computeFeatureScore, evaluateFeatured } from "./actions"
+import { evaluateFeatured } from "./actions"
+import { computeFeatureScore } from "./score"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
