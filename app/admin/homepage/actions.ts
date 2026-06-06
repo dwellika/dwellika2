@@ -6,6 +6,8 @@ import { auth } from "@/lib/auth/config"
 import { prisma } from "@/lib/prisma"
 import type { AnnouncementCategory, TestimonialGroup } from "@/lib/types/database"
 
+import { computeArtistScore } from "./score"
+
 type ActionResult = { ok: true } | { ok: false; error: string }
 
 async function requireAdmin(): Promise<string | null> {
@@ -113,27 +115,6 @@ export async function deleteTestimonial(id: string): Promise<ActionResult> {
 }
 
 // ─── Artist of the Week (Artist Score) ────────────────────────────────────────
-
-// Artist Score weights (sum = 1.0):
-//   0.35 portfolio + 0.20 engagement + 0.15 collection
-// + 0.10 freshness + 0.10 storytelling + 0.10 diversity
-export function computeArtistScore(s: {
-  portfolio: number
-  engagement: number
-  collection: number
-  freshness: number
-  storytelling: number
-  diversity: number
-}): number {
-  const score =
-    0.35 * s.portfolio +
-    0.2 * s.engagement +
-    0.15 * s.collection +
-    0.1 * s.freshness +
-    0.1 * s.storytelling +
-    0.1 * s.diversity
-  return Math.round(score * 100) / 100
-}
 
 const clamp = (n: number) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0))
 

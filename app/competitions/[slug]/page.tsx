@@ -16,6 +16,7 @@ import {
   listSubmissions,
   listWinners,
 } from "@/lib/data/competitions"
+import { MOCK_COMPETITIONS } from "@/lib/mock/home"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -53,8 +54,14 @@ export async function generateMetadata({ params }: PageProps) {
 export default async function CompetitionDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params
   const { submitted } = await searchParams
-  const comp = await getCompetitionBySlug(slug)
-  if (!comp) notFound()
+  const comp = await getCompetitionBySlug(slug).catch(() => null)
+  if (!comp) {
+    // Home page surfaces mock competitions; show a lightweight info view for
+    // those slugs instead of a 404 so "Enter the contest" always works.
+    const mock = MOCK_COMPETITIONS.find((m) => m.slug === slug)
+    if (mock) return <MockCompetitionView mock={mock} />
+    notFound()
+  }
 
   const viewer = await getCurrentUser()
   const [subs, winners, myVotes, mySub] = await Promise.all([
@@ -283,6 +290,35 @@ export default async function CompetitionDetailPage({ params, searchParams }: Pa
               </CardContent>
             </Card>
           </aside>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MockCompetitionView({ mock }: { mock: (typeof MOCK_COMPETITIONS)[number] }) {
+  const ends = new Date(mock.endsAt)
+  const daysLeft = Math.max(0, Math.ceil((ends.getTime() - Date.now()) / 86_400_000))
+  return (
+    <div className="relative">
+      <div className="relative h-64 w-full overflow-hidden md:h-80">
+        <SmartImage src={mock.banner} alt={mock.title} kind="competition" seed={mock.title} fill priority className="object-cover" sizes="100vw" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+      </div>
+      <div className="container-page relative z-10 -mt-20 pb-16">
+        <Badge variant="secondary"><Trophy className="mr-1 size-3" /> {mock.category}</Badge>
+        <h1 className="mt-3 font-display text-4xl md:text-5xl">{mock.title}</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5"><Calendar className="size-4" /> {daysLeft} day{daysLeft === 1 ? "" : "s"} left</span>
+          {mock.prize ? <span className="inline-flex items-center gap-1.5"><Sparkles className="size-4 text-primary" /> {mock.prize}</span> : null}
+          <span>{mock.participants.toLocaleString()} entries</span>
+        </div>
+        <p className="mt-6 max-w-2xl text-muted-foreground">
+          Submit your best work before the deadline, then the community votes for the winners.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button asChild><Link href="/signin?next=/competitions">Sign in to enter</Link></Button>
+          <Button asChild variant="outline"><Link href="/competitions">Browse all competitions</Link></Button>
         </div>
       </div>
     </div>

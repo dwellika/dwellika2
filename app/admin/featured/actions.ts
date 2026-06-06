@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { auth } from "@/lib/auth/config"
 import { prisma } from "@/lib/prisma"
+import { computeFeatureScore } from "./score"
 
 type ActionResult = { ok: true; score: number } | { ok: false; error: string }
 
@@ -13,27 +14,6 @@ async function requireAdmin() {
   const role = session.user.role as string | undefined
   if (role !== "admin" && role !== "super_admin") return null
   return session.user.id
-}
-
-// Feature Score weights (sum = 1.0):
-//   0.30 quality + 0.20 engagement + 0.15 sales + 0.15 freshness
-// + 0.10 diversity + 0.10 curator
-export function computeFeatureScore(s: {
-  quality: number
-  engagement: number
-  sales: number
-  freshness: number
-  diversity: number
-  curator: number
-}): number {
-  const score =
-    0.3 * s.quality +
-    0.2 * s.engagement +
-    0.15 * s.sales +
-    0.15 * s.freshness +
-    0.1 * s.diversity +
-    0.1 * s.curator
-  return Math.round(score * 100) / 100
 }
 
 const clamp = (n: number) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0))
